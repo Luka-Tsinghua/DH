@@ -1,6 +1,6 @@
 # DH
 
-本仓库为“数字人文国际联合暑期工作坊2023”（https://camp2023.pkudh.org/）的部分成果。
+本仓库为本人参与“数字人文国际联合暑期工作坊2023”（https://camp2023.pkudh.org/）小组作业的部分成果和过程文件。
 
 This repository documents a digital humanities workflow comparing two Jesuit missionary texts:
 - 1674 《坤輿圖說》
