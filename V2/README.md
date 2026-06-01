@@ -9,19 +9,21 @@ V2 is the current main version of this repository. It is no longer only a cleane
 
 ## 1. 当前成熟度 / Current Maturity
 
-V2 目前已经具备项目骨架、配置、metadata、schema、CLI、样例 segment、KWIC、claim review、解释札记和维护计划。但样例文本仍然是 pipeline 测试数据，不能作为正式古籍证据引用。
+V2 目前已经具备项目骨架、配置、metadata、schema、CLI、真实仓库文本 raw source manifest、真实文本摘录 segment、KWIC、claim review、解释札记和维护计划。此前的 `sample_segments.jsonl` 只保留为 pipeline smoke test，不再作为研究主线。
 
-V2 now contains a project scaffold, configuration, metadata, schemas, CLI, sample segments, KWIC output, claim review, interpretive note, and maintenance plan. However, the sample passages are pipeline test data and must not be cited as verified source evidence.
+V2 now contains a project scaffold, configuration, metadata, schemas, CLI, a raw source manifest for existing repository texts, real-text excerpt segments, KWIC output, claim review, interpretive note, and maintenance plan. The earlier `sample_segments.jsonl` is retained only for pipeline smoke testing and is no longer the research main line.
 
 | 层级 / Layer | 位置 / Location | 当前状态 / Current Status |
 |---|---|---|
 | 项目配置 / Project configuration | `V2/config/project.yml` | 已建立 / established |
 | 领域词表 / Domain lexicon | `V2/config/domain_lexicon_seed.csv` | 已建立 seed，可扩展 / seed established, extensible |
 | 文献 metadata / Document metadata | `V2/data/metadata/documents_seed.csv` | 已有两条 pilot records / two pilot records available |
-| 数据模型 / Data schemas | `V2/schemas/` | 已有 Document、Segment、Claim 等 schema / Document, Segment, Claim schemas available |
+| 原始文本登记 / Raw source manifest | `V2/data/raw/RAW_SOURCE_MANIFEST.csv` | 已指向仓库根目录真实文本 / points to existing root-level real texts |
+| 真实摘录 segment / Real excerpt segments | `V2/data/processed/verified_excerpt_segments.jsonl` | 已建立 / established |
+| 数据模型 / Data schemas | `V2/schemas/` | 已有 Document、Segment、Claim、AuthorityCrosswalk 等 schema / Document, Segment, Claim, AuthorityCrosswalk schemas available |
 | CLI 入口 / CLI entry point | `V2/scripts/dh_v2.py` | 可运行最低维护命令 / minimum maintenance commands available |
-| 样例数据 / Sample data | `V2/data/processed/sample_segments.jsonl` | 仅用于测试 pipeline / only for pipeline testing |
-| 研究案例 / Research case | `V2/cases/kunyu_diqiu_comparison/` | 已有可扩展案例结构 / expandable case structure available |
+| 测试样例 / Smoke-test sample | `V2/data/processed/sample_segments.jsonl` | 仅用于测试 pipeline / only for smoke testing |
+| 研究案例 / Research case | `V2/cases/kunyu_diqiu_comparison/` | 已使用真实仓库文本摘录 / uses real repository-text excerpts |
 | 维护计划 / Maintenance plan | `V2/docs/MAINTENANCE_PLAN.md` | 已建立 / established |
 
 ---
@@ -34,9 +36,9 @@ From the repository root, run the following commands.
 
 ```bash
 python V2/scripts/dh_v2.py validate-documents
-python V2/scripts/dh_v2.py validate-segments --segments data/processed/sample_segments.jsonl
+python V2/scripts/dh_v2.py validate-segments --segments data/processed/verified_excerpt_segments.jsonl
 python V2/scripts/dh_v2.py export-lexicon
-python V2/scripts/dh_v2.py generate-kwic --segments data/processed/sample_segments.jsonl
+python V2/scripts/dh_v2.py generate-kwic --segments data/processed/verified_excerpt_segments.jsonl --output cases/kunyu_diqiu_comparison/kwic_terms.csv
 python V2/scripts/dh_v2.py release-manifest
 ```
 
@@ -56,19 +58,28 @@ V2/
 │   ├── project.yml
 │   └── domain_lexicon_seed.csv
 ├── data/
+│   ├── README.md
+│   ├── raw/
+│   │   └── RAW_SOURCE_MANIFEST.csv
 │   ├── metadata/
 │   │   └── documents_seed.csv
-│   └── processed/
-│       └── sample_segments.jsonl
+│   ├── processed/
+│   │   ├── verified_excerpt_segments.jsonl
+│   │   └── sample_segments.jsonl
+│   └── external_authorities/
+│       └── authority_crosswalk_seed.csv
 ├── schemas/
 │   ├── document.schema.json
 │   ├── segment.schema.json
-│   └── claim.schema.json
+│   ├── claim.schema.json
+│   └── authority_crosswalk.schema.json
 ├── scripts/
 │   ├── __init__.py
 │   └── dh_v2.py
 ├── tests/
 │   └── test_cli_smoke.py
+├── templates/
+│   └── research_case/
 ├── cases/
 │   └── kunyu_diqiu_comparison/
 │       ├── README.md
@@ -77,10 +88,17 @@ V2/
 │       ├── claims_review.csv
 │       └── interpretive_note.md
 ├── docs/
-│   └── MAINTENANCE_PLAN.md
+│   ├── MAINTENANCE_PLAN.md
+│   ├── PROJECT_MATURITY_CHECKLIST.md
+│   ├── ROADMAP.md
+│   └── CI_WORKFLOW_TEMPLATE.md
 ├── outputs/
 └── releases/
 ```
+
+仓库根目录中的 `1674_坤輿圖說_WS.txt` 与 `1799_地球圖説_WS.txt` 是 V2 当前登记使用的真实 raw source。
+
+The root-level `1674_坤輿圖說_WS.txt` and `1799_地球圖説_WS.txt` are the real raw sources currently registered for V2.
 
 ---
 
@@ -93,6 +111,7 @@ The core objects of V2 are not web pages, but traceable research objects.
 | 对象 / Object | 作用 / Function |
 |---|---|
 | Document | 保存文献级信息，例如题名、作者、年代、来源、OCR 状态、权利状态。 / Stores document-level information such as title, author, date, source, OCR status, and rights status. |
+| RawSource | 登记真实原始文本路径，不覆盖原始材料。 / Registers real raw text paths without overwriting source materials. |
 | Segment | 保存可引用文本片段，每段必须有 `document_id` 和 `segment_id`。 / Stores citable textual segments; every segment must have `document_id` and `segment_id`. |
 | Term | 保存术语、规范形式、类别和说明。 / Stores terms, normalized forms, categories, and notes. |
 | Claim | 保存知识命题候选、证据引文、抽取方法和人工复核状态。 / Stores candidate knowledge claims, evidence quotes, extraction methods, and human review status. |
@@ -108,6 +127,8 @@ V2 的最低闭环如下。
 The minimum closed loop of V2 is as follows.
 
 ```text
+raw_source_manifest
+  ↓
 metadata
   ↓
 segments
@@ -129,15 +150,15 @@ Every step must preserve evidence, source information, and uncertainty.
 
 ---
 
-## 6. 样例数据说明 / Note on Sample Data
+## 6. 真实文本与样例数据 / Real Texts and Sample Data
 
-`V2/data/processed/sample_segments.jsonl` 中的文本是为了测试 pipeline 而设的 synthetic sample。它们不是经过核验的古籍原文。
+V2 当前研究主线使用 `verified_excerpt_segments.jsonl`，其段落来自仓库根目录已有的《坤輿圖說》和《地球圖説》文本。`sample_segments.jsonl` 仅用于 smoke test，不应进入正式研究解释。
 
-The texts in `V2/data/processed/sample_segments.jsonl` are synthetic samples for pipeline testing. They are not verified historical source passages.
+The V2 research main line currently uses `verified_excerpt_segments.jsonl`, whose segments derive from the existing root-level *Kunyu Tushuo* and *Diqiu Tushuo* text files. `sample_segments.jsonl` is only for smoke testing and should not enter formal research interpretation.
 
-正式研究必须用经过来源核验的文本替换样例数据，并补充版本、页码、卷次、OCR 状态和校勘说明。
+正式研究的下一步不是“替换 sample”，而是从根目录 raw source 自动生成完整 segment JSONL，并补充版本、页码、卷次、OCR 状态和校勘说明。
 
-Formal research must replace sample data with source-verified texts and add edition, page, fascicle, OCR status, and collation notes.
+The next formal step is not merely to “replace samples,” but to generate full segment JSONL from the root-level raw sources and add edition, page, fascicle, OCR status, and collation notes.
 
 ---
 
@@ -147,7 +168,7 @@ Formal research must replace sample data with source-verified texts and add edit
 
 When adding a new text, do not simply place it in the repository and start analysis. Follow a fixed workflow.
 
-1. 将原始文件放入 `V2/data/raw/`。
+1. 将原始文件放入 `V2/data/raw/`，或在 `RAW_SOURCE_MANIFEST.csv` 登记既有仓库路径。
 2. 在 `V2/data/metadata/documents_seed.csv` 添加 metadata。
 3. 运行 `validate-documents`。
 4. 建立 segment JSONL。
@@ -158,7 +179,7 @@ When adding a new text, do not simply place it in the repository and start analy
 9. 对 claim 做人工复核。
 10. 写 interpretive note。
 
-1. Place raw files in `V2/data/raw/`.
+1. Place raw files in `V2/data/raw/`, or register existing repository paths in `RAW_SOURCE_MANIFEST.csv`.
 2. Add metadata to `V2/data/metadata/documents_seed.csv`.
 3. Run `validate-documents`.
 4. Create segment JSONL.
@@ -200,11 +221,11 @@ A research case is not a display page. It is a combination of evidence, method, 
 - 保持 README、config、metadata、schemas、CLI、tests 一致。
 - Keep README, config, metadata, schemas, CLI, and tests consistent.
 
-### Phase 2: Source replacement
-### 第二阶段：替换真实材料
+### Phase 2: Full-source segmentation
+### 第二阶段：完整原文分段
 
-- 用经过来源核验的《坤輿圖說》《地球圖説》文本替换 sample segment。
-- Replace sample segments with source-verified passages from *Kunyu Tushuo* and *Diqiu Tushuo*.
+- 从 `1674_坤輿圖說_WS.txt` 和 `1799_地球圖説_WS.txt` 自动生成完整 segment JSONL。
+- Generate full segment JSONL from `1674_坤輿圖說_WS.txt` and `1799_地球圖説_WS.txt`.
 
 ### Phase 3: Case completion
 ### 第三阶段：完成第一个研究案例
@@ -232,8 +253,8 @@ A research case is not a display page. It is a combination of evidence, method, 
 
 V2 should be considered mature only when the following conditions are met.
 
-- 至少一个研究案例使用真实核验文本，而不是 sample data。
-- At least one research case uses source-verified texts rather than sample data.
+- 至少一个研究案例使用真实仓库文本，而不是 synthetic sample。
+- At least one research case uses real repository text rather than synthetic sample data.
 - 每条 claim 都有 evidence quote 和 review status。
 - Every claim has an evidence quote and review status.
 - metadata、segment、KWIC、claim review 和 release manifest 可以重复生成。
