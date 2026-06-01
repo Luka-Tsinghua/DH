@@ -1,0 +1,7 @@
+local_id,local_name,local_type,authority_source,authority_id,authority_uri,match_status,match_basis,matched_label,matched_dates,matched_note,reviewer,review_date,license_note
+person_verbiest_ferdinand,南怀仁 / Ferdinand Verbiest,person,manual_seed,,,
+candidate,"pilot authority record; requires CBDB/CHCD/BDCC/Ricci verification",,,,,"Do not copy third-party authority data without checking license."
+person_benoist_michel,蒋友仁 / Michel Benoist,person,manual_seed,,,
+candidate,"pilot authority record; requires CBDB/CHCD/BDCC/Ricci verification",,,,,"Do not copy third-party authority data without checking license."
+text_kunyutushuo_1674,坤輿圖說,text,local_project,kunyutushuo_1674,,verified,local metadata seed,坤輿圖說,1674,pilot text record,,,project-created metadata
+text_diqiutushuo_1799,地球圖説,text,local_project,diqiutushuo_1799,,verified,local metadata seed,地球圖説,1799,pilot text record,,,project-created metadata
