@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import re
 from datetime import datetime, timezone
@@ -19,6 +20,20 @@ from typing import Iterable
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = PROJECT_ROOT.parent
+
+DEFAULT_DOCUMENTS = "data/metadata/documents_seed.csv"
+DEFAULT_RAW_MANIFEST = "data/raw/RAW_SOURCE_MANIFEST.csv"
+DEFAULT_SAMPLE_SEGMENTS = "data/processed/sample_segments.jsonl"
+DEFAULT_FULL_SEGMENTS = "data/processed/full_segments.jsonl"
+DEFAULT_LEXICON = "config/domain_lexicon_seed.csv"
+
+
+# ---------------------------------------------------------------------------
+# Basic IO
+# ---------------------------------------------------------------------------
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def resolve_project_path(value: str) -> Path:
@@ -37,6 +52,13 @@ def resolve_repo_path(value: str) -> Path:
     return REPO_ROOT / path
 
 
+def safe_relative(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        return str(path)
+
+
 def read_text(path: Path) -> str:
     if not path.exists():
         raise FileNotFoundError(f"Missing file: {path}")
@@ -50,12 +72,13 @@ def read_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(f))
 
 
-def write_csv(path: Path, rows: list[dict[str, str]], fieldnames: list[str]) -> None:
+def write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
+        for row in rows:
+            writer.writerow(row)
 
 
 def read_jsonl(path: Path) -> list[dict[str, object]]:
@@ -87,10 +110,169 @@ def write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
 
 def write_json(path: Path, data: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-        f.write("\n")
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+# ---------------------------------------------------------------------------
+# Validation
+# ---------------------------------------------------------------------------
+
+def validate_documents(args: argparse.Namespace) -> None:
+    metadata_path = resolve_project_path(args.metadata)
+    rows = read_csv(metadata_path)
+    required = [
+        "document_id",
+        "title_original",
+        "title_normalized",
+        "year_standard",
+        "source_status",
+        "ocr_status",
+        "rights_status",
+    ]
+    allowed_status = {
+        "source_status": {"verified", "candidate", "missing", "unclear"},
+        "ocr_status": {"not_started", "raw_ocr", "sample_checked", "collated", "unclear"},
+        "rights_status": {"open", "restricted", "unknown", "do_not_publish_raw"},
+    }
+    errors: list[str] = []
+    warnings: list[str] = []
+    seen: set[str] = set()
+
+    if not rows:
+        errors.append("metadata file has no rows")
+
+    for i, row in enumerate(rows, start=2):
+        for field in required:
+            if not row.get(field, "").strip():
+                errors.append(f"line {i}: missing required field {field}")
+        doc_id = row.get("document_id", "").strip()
+        if doc_id in seen:
+            errors.append(f"line {i}: duplicate document_id {doc_id}")
+        seen.add(doc_id)
+        for field, allowed in allowed_status.items():
+            value = row.get(field, "").strip()
+            if value and value not in allowed:
+                errors.append(f"line {i}: invalid {field}={value!r}")
+        if row.get("source_status") != "verified":
+            warnings.append(f"line {i}: source not yet verified for {doc_id}")
+        if row.get("rights_status") == "unknown":
+            warnings.append(f"line {i}: rights status unknown for {doc_id}")
+
+    report = {
+        "check": "validate-documents",
+        "metadata": safe_relative(metadata_path),
+        "row_count": len(rows),
+        "error_count": len(errors),
+        "warning_count": len(warnings),
+        "errors": errors,
+        "warnings": warnings,
+        "generated_at": now_iso(),
+    }
+    output_path = resolve_project_path(args.output)
+    write_json(output_path, report)
+
+    if errors:
+        print(f"Validation failed: {len(errors)} error(s). See {output_path}")
+        raise SystemExit(1)
+    print(f"Validation passed: {len(rows)} document record(s). Report: {output_path}")
+
+
+def validate_raw_sources(args: argparse.Namespace) -> None:
+    manifest_path = resolve_project_path(args.manifest)
+    rows = read_csv(manifest_path)
+    required = ["document_id", "raw_source_path", "source_role", "source_status"]
+    errors: list[str] = []
+    checked: list[dict[str, object]] = []
+
+    for i, row in enumerate(rows, start=2):
+        for field in required:
+            if not row.get(field, "").strip():
+                errors.append(f"line {i}: missing required field {field}")
+        raw_path = resolve_repo_path(row.get("raw_source_path", ""))
+        exists = raw_path.exists()
+        if not exists:
+            errors.append(f"line {i}: raw source does not exist: {raw_path}")
+        checked.append({
+            "document_id": row.get("document_id", ""),
+            "raw_source_path": safe_relative(raw_path),
+            "exists": exists,
+            "size_bytes": raw_path.stat().st_size if exists else 0,
+            "sha256": sha256_file(raw_path) if exists else "",
+        })
+
+    report = {
+        "check": "validate-raw-sources",
+        "manifest": safe_relative(manifest_path),
+        "row_count": len(rows),
+        "error_count": len(errors),
+        "errors": errors,
+        "checked": checked,
+        "generated_at": now_iso(),
+    }
+    output_path = resolve_project_path(args.output)
+    write_json(output_path, report)
+    if errors:
+        print(f"Raw source validation failed: {len(errors)} error(s). See {output_path}")
+        raise SystemExit(1)
+    print(f"Raw source validation passed: {len(rows)} source(s). Report: {output_path}")
+
+
+def validate_segments(args: argparse.Namespace) -> None:
+    segments_path = resolve_project_path(args.segments)
+    metadata_path = resolve_project_path(args.metadata)
+    metadata_rows = read_csv(metadata_path)
+    allowed_doc_ids = {row.get("document_id", "") for row in metadata_rows}
+    rows = read_jsonl(segments_path)
+    errors: list[str] = []
+    warnings: list[str] = []
+    seen: set[str] = set()
+
+    for i, row in enumerate(rows, start=1):
+        segment_id = str(row.get("segment_id", "")).strip()
+        document_id = str(row.get("document_id", "")).strip()
+        text = str(row.get("text", ""))
+        if not segment_id:
+            errors.append(f"line {i}: missing segment_id")
+        elif segment_id in seen:
+            errors.append(f"line {i}: duplicate segment_id {segment_id}")
+        seen.add(segment_id)
+        if document_id not in allowed_doc_ids:
+            errors.append(f"line {i}: unknown document_id {document_id}")
+        if not text.strip():
+            errors.append(f"line {i}: empty text")
+        if "placeholder" in str(row.get("notes", "")).lower() or "样本" in text:
+            warnings.append(f"line {i}: possible sample or placeholder segment {segment_id}")
+
+    report = {
+        "check": "validate-segments",
+        "segments": safe_relative(segments_path),
+        "metadata": safe_relative(metadata_path),
+        "row_count": len(rows),
+        "error_count": len(errors),
+        "warning_count": len(warnings),
+        "errors": errors,
+        "warnings": warnings,
+        "generated_at": now_iso(),
+    }
+    output_path = resolve_project_path(args.output)
+    write_json(output_path, report)
+    if errors:
+        print(f"Segment validation failed: {len(errors)} error(s). See {output_path}")
+        raise SystemExit(1)
+    print(f"Segment validation passed: {len(rows)} segment(s). Report: {output_path}")
+
+
+# ---------------------------------------------------------------------------
+# Text processing
+# ---------------------------------------------------------------------------
 
 def normalize_ws_text(text: str) -> str:
     """Normalize WS/OCR-style text by removing tokenization whitespace.
@@ -119,95 +301,6 @@ def chunk_text(text: str, max_chars: int, min_chars: int) -> list[tuple[int, int
         chunks[-2] = (prev_start, last_end, prev_text + last_text)
         chunks.pop()
     return chunks
-
-
-def validate_documents(args: argparse.Namespace) -> None:
-    metadata_path = resolve_project_path(args.metadata)
-    rows = read_csv(metadata_path)
-    required = [
-        "document_id",
-        "title_original",
-        "title_normalized",
-        "year_standard",
-        "source_status",
-        "ocr_status",
-        "rights_status",
-    ]
-    allowed_status = {
-        "source_status": {"verified", "candidate", "missing", "unclear"},
-        "ocr_status": {"not_started", "raw_ocr", "sample_checked", "collated", "unclear"},
-        "rights_status": {"open", "restricted", "unknown", "do_not_publish_raw"},
-    }
-    errors: list[str] = []
-    seen: set[str] = set()
-
-    for i, row in enumerate(rows, start=2):
-        for field in required:
-            if not row.get(field, "").strip():
-                errors.append(f"line {i}: missing required field {field}")
-        doc_id = row.get("document_id", "").strip()
-        if doc_id in seen:
-            errors.append(f"line {i}: duplicate document_id {doc_id}")
-        seen.add(doc_id)
-        for field, allowed in allowed_status.items():
-            value = row.get(field, "").strip()
-            if value and value not in allowed:
-                errors.append(f"line {i}: invalid {field}={value!r}")
-
-    report = {
-        "check": "validate-documents",
-        "metadata": str(metadata_path),
-        "row_count": len(rows),
-        "error_count": len(errors),
-        "errors": errors,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-    }
-    output_path = resolve_project_path(args.output)
-    write_json(output_path, report)
-
-    if errors:
-        print(f"Validation failed: {len(errors)} error(s). See {output_path}")
-        raise SystemExit(1)
-    print(f"Validation passed: {len(rows)} document record(s). Report: {output_path}")
-
-
-def validate_raw_sources(args: argparse.Namespace) -> None:
-    manifest_path = resolve_project_path(args.manifest)
-    rows = read_csv(manifest_path)
-    required = ["document_id", "raw_source_path", "source_role", "source_status"]
-    errors: list[str] = []
-    checked: list[dict[str, object]] = []
-
-    for i, row in enumerate(rows, start=2):
-        for field in required:
-            if not row.get(field, "").strip():
-                errors.append(f"line {i}: missing required field {field}")
-        raw_path = resolve_repo_path(row.get("raw_source_path", ""))
-        exists = raw_path.exists()
-        if not exists:
-            errors.append(f"line {i}: raw source does not exist: {raw_path}")
-        checked.append({
-            "document_id": row.get("document_id", ""),
-            "raw_source_path": str(raw_path),
-            "exists": exists,
-            "size_bytes": raw_path.stat().st_size if exists else 0,
-        })
-
-    report = {
-        "check": "validate-raw-sources",
-        "manifest": str(manifest_path),
-        "row_count": len(rows),
-        "error_count": len(errors),
-        "errors": errors,
-        "checked": checked,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-    }
-    output_path = resolve_project_path(args.output)
-    write_json(output_path, report)
-    if errors:
-        print(f"Raw source validation failed: {len(errors)} error(s). See {output_path}")
-        raise SystemExit(1)
-    print(f"Raw source validation passed: {len(rows)} source(s). Report: {output_path}")
 
 
 def build_segments_from_raw(args: argparse.Namespace) -> None:
@@ -240,11 +333,11 @@ def build_segments_from_raw(args: argparse.Namespace) -> None:
                 "char_start": char_start,
                 "char_end": char_end,
                 "confidence_level": "raw_ws_normalized",
-                "notes": "Generated from registered root-level WS raw text. Whitespace removed; verify against raw source before final scholarly citation.",
+                "notes": "Generated from registered WS raw text. Verify against raw source before final scholarly citation.",
             })
         report_rows.append({
             "document_id": document_id,
-            "raw_source_path": str(raw_path),
+            "raw_source_path": safe_relative(raw_path),
             "raw_chars": len(raw_text),
             "normalized_chars": len(normalized),
             "segments": len(chunks),
@@ -254,130 +347,94 @@ def build_segments_from_raw(args: argparse.Namespace) -> None:
     write_jsonl(output_path, output_rows)
     report = {
         "check": "build-segments-from-raw",
-        "manifest": str(manifest_path),
-        "output": str(output_path),
+        "manifest": safe_relative(manifest_path),
+        "output": safe_relative(output_path),
         "segment_count": len(output_rows),
         "sources": report_rows,
-        "parameters": {"max_chars": max_chars, "min_chars": min_chars},
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": now_iso(),
     }
     report_path = resolve_project_path(args.report)
     write_json(report_path, report)
-    print(f"Full segments written: {output_path} ({len(output_rows)} segment(s)); report: {report_path}")
+    print(f"Generated {len(output_rows)} segment(s): {output_path}")
+    print(f"Build report: {report_path}")
 
 
-def validate_segments(args: argparse.Namespace) -> None:
-    segment_path = resolve_project_path(args.segments)
-    rows = read_jsonl(segment_path)
-    required = ["segment_id", "document_id", "segment_index", "text"]
-    errors: list[str] = []
-    seen: set[str] = set()
-    for i, row in enumerate(rows, start=1):
-        for field in required:
-            if field not in row or str(row.get(field, "")).strip() == "":
-                errors.append(f"row {i}: missing required field {field}")
-        segment_id = str(row.get("segment_id", "")).strip()
-        if segment_id in seen:
-            errors.append(f"row {i}: duplicate segment_id {segment_id}")
-        seen.add(segment_id)
-    report = {
-        "check": "validate-segments",
-        "segments": str(segment_path),
-        "row_count": len(rows),
-        "error_count": len(errors),
-        "errors": errors,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-    }
-    output_path = resolve_project_path(args.output)
-    write_json(output_path, report)
-    if errors:
-        print(f"Segment validation failed: {len(errors)} error(s). See {output_path}")
-        raise SystemExit(1)
-    print(f"Segment validation passed: {len(rows)} segment(s). Report: {output_path}")
-
-
-def inventory(args: argparse.Namespace) -> None:
-    target = resolve_project_path(args.path)
-    files = []
-    for p in sorted(target.rglob("*")) if target.exists() else []:
-        if p.is_file():
-            files.append({
-                "path": str(p.relative_to(PROJECT_ROOT)),
-                "size_bytes": p.stat().st_size,
-                "suffix": p.suffix,
-            })
-    output_path = resolve_project_path(args.output)
-    write_json(output_path, {
-        "check": "inventory",
-        "root": str(target),
-        "file_count": len(files),
-        "files": files,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-    })
-    print(f"Inventory written: {output_path}")
-
-
-def export_lexicon(args: argparse.Namespace) -> None:
-    lexicon_path = resolve_project_path(args.lexicon)
-    rows = read_csv(lexicon_path)
-    grouped: dict[str, list[dict[str, str]]] = {}
-    for row in rows:
-        grouped.setdefault(row.get("category", "uncategorized"), []).append(row)
-    output_path = resolve_project_path(args.output)
-    write_json(output_path, grouped)
-    print(f"Lexicon exported: {output_path}")
+def load_terms(path: Path) -> list[dict[str, str]]:
+    return [row for row in read_csv(path) if row.get("term", "").strip()]
 
 
 def generate_kwic(args: argparse.Namespace) -> None:
-    segment_path = resolve_project_path(args.segments)
+    segments_path = resolve_project_path(args.segments)
     lexicon_path = resolve_project_path(args.lexicon)
-    rows = read_jsonl(segment_path)
-    terms = [row["term"] for row in read_csv(lexicon_path) if row.get("term")]
-    window = max(args.window, 1)
-    output_rows: list[dict[str, str]] = []
-    for row in rows:
-        text = str(row.get("text", ""))
-        for term in terms:
+    segments = read_jsonl(segments_path)
+    terms = load_terms(lexicon_path)
+    rows: list[dict[str, object]] = []
+
+    for segment in segments:
+        text = str(segment.get("text", ""))
+        for entry in terms:
+            term = entry.get("term", "").strip()
+            if not term:
+                continue
             start = 0
             while True:
                 idx = text.find(term, start)
                 if idx == -1:
                     break
-                output_rows.append({
-                    "document_id": str(row.get("document_id", "")),
-                    "segment_id": str(row.get("segment_id", "")),
+                rows.append({
+                    "document_id": str(segment.get("document_id", "")),
+                    "segment_id": str(segment.get("segment_id", "")),
                     "term": term,
-                    "left_context": text[max(0, idx - window):idx],
-                    "right_context": text[idx + len(term):idx + len(term) + window],
+                    "normalized_form": entry.get("normalized_form", term),
+                    "category": entry.get("category", ""),
+                    "subcategory": entry.get("subcategory", ""),
+                    "position": idx,
+                    "left_context": text[max(0, idx - args.window):idx],
+                    "right_context": text[idx + len(term):idx + len(term) + args.window],
                     "evidence_quote": text,
+                    "review_status": "candidate",
                 })
                 start = idx + len(term)
+
+    fieldnames = [
+        "document_id",
+        "segment_id",
+        "term",
+        "normalized_form",
+        "category",
+        "subcategory",
+        "position",
+        "left_context",
+        "right_context",
+        "evidence_quote",
+        "review_status",
+    ]
     output_path = resolve_project_path(args.output)
-    fieldnames = ["document_id", "segment_id", "term", "left_context", "right_context", "evidence_quote"]
-    write_csv(output_path, output_rows, fieldnames)
-    print(f"KWIC written: {output_path} ({len(output_rows)} hit(s))")
+    write_csv(output_path, rows, fieldnames)
+    print(f"Generated {len(rows)} KWIC row(s): {output_path}")
 
 
 def generate_evidence_table(args: argparse.Namespace) -> None:
     kwic_path = resolve_project_path(args.kwic)
-    kwic_rows = read_csv(kwic_path)
-    output_rows: list[dict[str, str]] = []
-    limit = args.limit if args.limit and args.limit > 0 else None
-    for index, row in enumerate(kwic_rows[:limit], start=1):
+    rows = read_csv(kwic_path)
+    evidence_rows: list[dict[str, object]] = []
+    limit = args.limit if args.limit and args.limit > 0 else len(rows)
+
+    for index, row in enumerate(rows[:limit], start=1):
         term = row.get("term", "")
-        output_rows.append({
+        evidence_rows.append({
             "evidence_id": f"EVID-AUTO-{index:05d}",
             "document_id": row.get("document_id", ""),
             "segment_id": row.get("segment_id", ""),
             "term": term,
             "claim_type": "term_context",
             "evidence_quote": row.get("evidence_quote", ""),
-            "observation_zh": f"术语「{term}」出现在该段文本中；具体解释需人工复核。",
-            "observation_en": f"The term '{term}' appears in this segment; interpretation requires human review.",
+            "observation_zh": f"术语「{term}」出现在该段文本中；其解释意义需要人工复核。",
+            "observation_en": f"The term '{term}' appears in this segment; its interpretive significance requires human review.",
             "review_status": "candidate",
-            "review_note": "Generated from KWIC; not a scholarly conclusion.",
+            "review_note": "Generated from KWIC; not a final scholarly conclusion.",
         })
-    output_path = resolve_project_path(args.output)
+
     fieldnames = [
         "evidence_id",
         "document_id",
@@ -390,102 +447,95 @@ def generate_evidence_table(args: argparse.Namespace) -> None:
         "review_status",
         "review_note",
     ]
-    write_csv(output_path, output_rows, fieldnames)
-    print(f"Evidence table written: {output_path} ({len(output_rows)} row(s))")
+    output_path = resolve_project_path(args.output)
+    write_csv(output_path, evidence_rows, fieldnames)
+    print(f"Generated {len(evidence_rows)} evidence candidate(s): {output_path}")
 
 
-def generate_release_manifest(args: argparse.Namespace) -> None:
-    paths = [
-        "config",
-        "data/raw",
-        "data/metadata",
-        "data/processed",
-        "data/external_authorities",
-        "schemas",
-        "scripts",
-        "cases",
-        "docs",
-        "templates",
-        "tests",
-    ]
-    files = []
-    for relative in paths:
-        root = PROJECT_ROOT / relative
-        if not root.exists():
+# ---------------------------------------------------------------------------
+# Release manifest
+# ---------------------------------------------------------------------------
+
+def iter_files(base: Path) -> Iterable[Path]:
+    skip_dirs = {".git", "__pycache__", ".pytest_cache", "node_modules"}
+    for path in sorted(base.rglob("*")):
+        if any(part in skip_dirs for part in path.parts):
             continue
-        for p in sorted(root.rglob("*")):
-            if p.is_file():
-                files.append({
-                    "path": str(p.relative_to(PROJECT_ROOT)),
-                    "size_bytes": p.stat().st_size,
-                })
+        if path.is_file():
+            yield path
+
+
+def release_manifest(args: argparse.Namespace) -> None:
+    base = resolve_project_path(args.base)
+    files: list[dict[str, object]] = []
+    for path in iter_files(base):
+        files.append({
+            "path": safe_relative(path),
+            "size_bytes": path.stat().st_size,
+            "sha256": sha256_file(path),
+        })
     manifest = {
         "project": "DH VR / V2 Research Version",
-        "release_name": args.name,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "base": safe_relative(base),
         "file_count": len(files),
-        "included_files": files,
-        "notes": "This manifest lists V2 project-maintenance files. Registered root-level raw sources are listed in data/raw/RAW_SOURCE_MANIFEST.csv.",
+        "files": files,
+        "generated_at": now_iso(),
+        "note": "Manifest records repository files for review and release handoff. Generated analysis remains candidate material until human review.",
     }
     output_path = resolve_project_path(args.output)
     write_json(output_path, manifest)
-    print(f"Release manifest written: {output_path}")
+    print(f"Release manifest generated with {len(files)} file(s): {output_path}")
 
+
+# ---------------------------------------------------------------------------
+# Parser
+# ---------------------------------------------------------------------------
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="dh_v2", description="DH VR/V2 maintenance CLI")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_validate = sub.add_parser("validate-documents", help="Validate document metadata CSV")
-    p_validate.add_argument("--metadata", default="data/metadata/documents_seed.csv")
-    p_validate.add_argument("--output", default="outputs/qc/documents_validation.json")
-    p_validate.set_defaults(func=validate_documents)
+    p = sub.add_parser("validate-documents")
+    p.add_argument("--metadata", default=DEFAULT_DOCUMENTS)
+    p.add_argument("--output", default="outputs/qc/documents_validation_report.json")
+    p.set_defaults(func=validate_documents)
 
-    p_raw = sub.add_parser("validate-raw-sources", help="Validate registered raw source files")
-    p_raw.add_argument("--manifest", default="data/raw/RAW_SOURCE_MANIFEST.csv")
-    p_raw.add_argument("--output", default="outputs/qc/raw_sources_validation.json")
-    p_raw.set_defaults(func=validate_raw_sources)
+    p = sub.add_parser("validate-raw-sources")
+    p.add_argument("--manifest", default=DEFAULT_RAW_MANIFEST)
+    p.add_argument("--output", default="outputs/qc/raw_sources_validation_report.json")
+    p.set_defaults(func=validate_raw_sources)
 
-    p_build = sub.add_parser("build-segments-from-raw", help="Build full segment JSONL from registered raw source files")
-    p_build.add_argument("--manifest", default="data/raw/RAW_SOURCE_MANIFEST.csv")
-    p_build.add_argument("--output", default="data/processed/full_segments.jsonl")
-    p_build.add_argument("--report", default="outputs/qc/raw_segment_build_report.json")
-    p_build.add_argument("--max-chars", type=int, default=400)
-    p_build.add_argument("--min-chars", type=int, default=80)
-    p_build.set_defaults(func=build_segments_from_raw)
+    p = sub.add_parser("validate-segments")
+    p.add_argument("--segments", default=DEFAULT_SAMPLE_SEGMENTS)
+    p.add_argument("--metadata", default=DEFAULT_DOCUMENTS)
+    p.add_argument("--output", default="outputs/qc/segments_validation_report.json")
+    p.set_defaults(func=validate_segments)
 
-    p_segments = sub.add_parser("validate-segments", help="Validate a segment JSONL file")
-    p_segments.add_argument("--segments", required=True)
-    p_segments.add_argument("--output", default="outputs/qc/segments_validation.json")
-    p_segments.set_defaults(func=validate_segments)
+    p = sub.add_parser("build-segments-from-raw")
+    p.add_argument("--manifest", default=DEFAULT_RAW_MANIFEST)
+    p.add_argument("--output", default=DEFAULT_FULL_SEGMENTS)
+    p.add_argument("--report", default="outputs/qc/build_segments_from_raw_report.json")
+    p.add_argument("--max-chars", type=int, default=450)
+    p.add_argument("--min-chars", type=int, default=120)
+    p.set_defaults(func=build_segments_from_raw)
 
-    p_inventory = sub.add_parser("inventory", help="Inventory files under a project path")
-    p_inventory.add_argument("--path", default="data")
-    p_inventory.add_argument("--output", default="outputs/qc/inventory.json")
-    p_inventory.set_defaults(func=inventory)
+    p = sub.add_parser("generate-kwic")
+    p.add_argument("--segments", default=DEFAULT_SAMPLE_SEGMENTS)
+    p.add_argument("--lexicon", default=DEFAULT_LEXICON)
+    p.add_argument("--output", default="outputs/features/kwic_terms.csv")
+    p.add_argument("--window", type=int, default=18)
+    p.set_defaults(func=generate_kwic)
 
-    p_lexicon = sub.add_parser("export-lexicon", help="Export domain lexicon CSV to grouped JSON")
-    p_lexicon.add_argument("--lexicon", default="config/domain_lexicon_seed.csv")
-    p_lexicon.add_argument("--output", default="outputs/features/domain_lexicon.json")
-    p_lexicon.set_defaults(func=export_lexicon)
+    p = sub.add_parser("generate-evidence-table")
+    p.add_argument("--kwic", default="outputs/features/kwic_terms.csv")
+    p.add_argument("--output", default="outputs/features/evidence_table_candidates.csv")
+    p.add_argument("--limit", type=int, default=200)
+    p.set_defaults(func=generate_evidence_table)
 
-    p_kwic = sub.add_parser("generate-kwic", help="Generate a KWIC table from segment JSONL and lexicon CSV")
-    p_kwic.add_argument("--segments", required=True)
-    p_kwic.add_argument("--lexicon", default="config/domain_lexicon_seed.csv")
-    p_kwic.add_argument("--output", default="outputs/features/kwic_terms.csv")
-    p_kwic.add_argument("--window", type=int, default=12)
-    p_kwic.set_defaults(func=generate_kwic)
-
-    p_evidence = sub.add_parser("generate-evidence-table", help="Generate candidate evidence rows from a KWIC table")
-    p_evidence.add_argument("--kwic", required=True)
-    p_evidence.add_argument("--output", default="outputs/features/evidence_table.csv")
-    p_evidence.add_argument("--limit", type=int, default=0, help="Maximum rows to export; 0 means all")
-    p_evidence.set_defaults(func=generate_evidence_table)
-
-    p_manifest = sub.add_parser("release-manifest", help="Generate a release manifest for project-maintenance files")
-    p_manifest.add_argument("--name", default="v2-working-release")
-    p_manifest.add_argument("--output", default="releases/release_manifest.json")
-    p_manifest.set_defaults(func=generate_release_manifest)
+    p = sub.add_parser("release-manifest")
+    p.add_argument("--base", default=".")
+    p.add_argument("--output", default="releases/manifest.json")
+    p.set_defaults(func=release_manifest)
 
     return parser
 
