@@ -6,15 +6,24 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = PROJECT_ROOT / "scripts" / "dh_v2.py"
+CASE_BUILDER_PATH = PROJECT_ROOT / "scripts" / "build_case.py"
 
 
-def load_cli_module():
-    spec = importlib.util.spec_from_file_location("dh_v2", SCRIPT_PATH)
+def load_module(path: Path, name: str):
+    spec = importlib.util.spec_from_file_location(name, path)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def load_cli_module():
+    return load_module(SCRIPT_PATH, "dh_v2")
+
+
+def load_case_builder_module():
+    return load_module(CASE_BUILDER_PATH, "build_case")
 
 
 def as_cli_path(path: Path) -> str:
@@ -127,3 +136,37 @@ def test_generate_kwic_and_evidence_from_real_excerpt_segments(tmp_path):
     text = evidence.read_text(encoding="utf-8")
     assert "candidate" in text
     assert "evidence_quote" in text
+
+
+def test_case_builder_generates_candidate_outputs(tmp_path):
+    module = load_case_builder_module()
+    config = {
+        "case_id": "test_case",
+        "segments": "data/processed/verified_excerpt_segments.jsonl",
+        "lexicon": "config/domain_lexicon_seed.csv",
+        "focus_terms": ["坤輿", "地球", "赤道", "經緯"],
+        "window": 12,
+        "outputs": {
+            "kwic": as_cli_path(tmp_path / "case_kwic.csv"),
+            "evidence": as_cli_path(tmp_path / "case_evidence.csv"),
+            "claims": as_cli_path(tmp_path / "case_claims.csv"),
+            "report": as_cli_path(tmp_path / "case_report.json"),
+        },
+    }
+    config_path = tmp_path / "case_config.json"
+    config_path.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
+
+    module.main(["--config", as_cli_path(config_path)])
+
+    kwic = tmp_path / "case_kwic.csv"
+    evidence = tmp_path / "case_evidence.csv"
+    claims = tmp_path / "case_claims.csv"
+    report = tmp_path / "case_report.json"
+    assert kwic.exists()
+    assert evidence.exists()
+    assert claims.exists()
+    assert report.exists()
+    report_data = json.loads(report.read_text(encoding="utf-8"))
+    assert report_data["case_id"] == "test_case"
+    assert report_data["kwic_count"] >= 1
+    assert report_data["claim_candidate_count"] >= 1
