@@ -1,0 +1,35 @@
+name: V2 checks
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "V2/**"
+      - "1674_坤輿圖說_WS.txt"
+      - "1799_地球圖説_WS.txt"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "V2/**"
+      - "1674_坤輿圖說_WS.txt"
+      - "1799_地球圖説_WS.txt"
+
+jobs:
+  v2-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip pytest
+      - run: python V2/scripts/dh_v2.py validate-documents
+      - run: python V2/scripts/dh_v2.py validate-raw-sources
+      - run: python V2/scripts/dh_v2.py build-segments-from-raw
+      - run: python V2/scripts/dh_v2.py validate-segments --segments data/processed/full_segments.jsonl
+      - run: python V2/scripts/dh_v2.py export-lexicon
+      - run: python V2/scripts/dh_v2.py generate-kwic --segments data/processed/full_segments.jsonl --output outputs/features/full_kwic_terms.csv
+      - run: python V2/scripts/dh_v2.py generate-evidence-table --kwic outputs/features/full_kwic_terms.csv --output outputs/features/full_evidence_table.csv --limit 200
+      - run: python V2/scripts/build_case.py --config cases/kunyu_diqiu_comparison/case_config.json
+      - run: python V2/scripts/dh_v2.py release-manifest
+      - run: pytest V2/tests
