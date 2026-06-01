@@ -1,0 +1,42 @@
+[project]
+name = "dh-vr-v2"
+version = "0.1.0"
+description = "Maintainable research infrastructure for Ming-Qing Western Learning texts"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Repository-specific layered license; see docs/DATA_LICENSE_AND_RELEASE_POLICY.md"}
+authors = [
+  {name = "Luka / Xue Ke"}
+]
+keywords = [
+  "digital-humanities",
+  "ming-qing",
+  "western-learning",
+  "jesuit-studies",
+  "history-of-knowledge",
+  "philology"
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Topic :: Text Processing",
+  "Topic :: Scientific/Engineering :: Information Analysis"
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[project.scripts]
+dh-v2 = "scripts.dh_v2:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.dh_v2]
+project_config = "config/project.yml"
+metadata = "data/metadata/documents_seed.csv"
+lexicon = "config/domain_lexicon_seed.csv"
