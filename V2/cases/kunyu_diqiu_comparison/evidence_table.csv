@@ -1,0 +1,3 @@
+evidence_id,document_id,segment_id,term,claim_type,evidence_quote,observation_zh,observation_en,review_status,review_note
+EVID-KD-0001,kunyutushuo_1674,,坤舆,geographical,,待补入原文证据后填写观察。,Observation to be written after textual evidence is added.,candidate,requires source passage
+EVID-KD-0002,diqiutushuo_1799,,地球,geographical,,待补入原文证据后填写观察。,Observation to be written after textual evidence is added.,candidate,requires source passage
