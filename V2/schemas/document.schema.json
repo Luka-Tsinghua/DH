@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Luka-Tsinghua/DH/V2/schemas/document.schema.json",
+  "title": "Document",
+  "type": "object",
+  "required": [
+    "document_id",
+    "title_original",
+    "title_normalized",
+    "year_standard",
+    "source_status",
+    "ocr_status",
+    "rights_status"
+  ],
+  "properties": {
+    "document_id": {"type": "string", "pattern": "^[a-zA-Z0-9_\\-]+$"},
+    "title_original": {"type": "string"},
+    "title_normalized": {"type": "string"},
+    "title_english": {"type": "string"},
+    "year_original": {"type": "string"},
+    "year_standard": {"type": ["integer", "null"]},
+    "author_original": {"type": "string"},
+    "author_normalized": {"type": "string"},
+    "translator": {"type": "string"},
+    "reviser": {"type": "string"},
+    "editor": {"type": "string"},
+    "dynasty": {"type": "string"},
+    "genre": {"type": "string"},
+    "knowledge_domain": {"type": "string"},
+    "source_collection": {"type": "string"},
+    "source_volume": {"type": "string"},
+    "source_page_start": {"type": "string"},
+    "source_page_end": {"type": "string"},
+    "source_status": {"enum": ["verified", "candidate", "missing", "unclear"]},
+    "ocr_status": {"enum": ["not_started", "raw_ocr", "sample_checked", "collated", "unclear"]},
+    "correction_status": {"enum": ["not_started", "in_progress", "sample_checked", "fully_collated", "unclear"]},
+    "rights_status": {"enum": ["open", "restricted", "unknown", "do_not_publish_raw"]},
+    "notes": {"type": "string"}
+  },
+  "additionalProperties": true
+}
