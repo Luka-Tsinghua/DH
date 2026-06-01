@@ -1,0 +1,2 @@
+claim_id,document_id,segment_id,claim_type,claim_text,evidence_quote,extraction_method,claim_status,reviewer,review_date,uncertainty_note
+CLAIM-CASE-0001,,,,,,,candidate,,,
