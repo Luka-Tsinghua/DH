@@ -1,143 +1,252 @@
 # DH V2：明清西学文本与跨文化知识史研究项目
+# DH V2: Ming-Qing Western Learning Texts and Transcultural Knowledge History Project
 
-## 一、项目简介
+V2 是本仓库的当前主版本。它不再只是 V1 工作坊成果的整理，而是一个面向长期研究、教学复用和可持续维护的人文学术基础设施。
 
-DH V2 是一个面向传统人文学术的长期研究项目。它以明清时期西学中文文献为核心材料，关注传教士、清廷官员、儒家士人、译者、润色者和知识机构之间的文本关系、思想关系与知识传播关系。
+V2 is the current main version of this repository. It is no longer only a cleaned-up continuation of the V1 workshop materials, but a humanities research infrastructure designed for long-term research, teaching reuse, and sustainable maintenance.
 
-本项目并不把数字技术视为目的，也不把网页、数据库或模型输出当作学术结论。它真正关心的是：传统文献学、思想史、知识史、宗教史与概念史研究，如何在大规模材料、复杂版本、跨文化术语和多重人物网络面前获得更稳定的材料控制能力。
+---
 
-换言之，DH V2 不是一个展示型项目，而是一个可持续积累的文史研究基础设施。它希望帮助研究者更细致地阅读文本，更清楚地保存证据，更系统地比较文献，也更谨慎地提出解释。
+## 1. 当前成熟度 / Current Maturity
 
-## 二、研究对象
+V2 目前已经具备项目骨架、配置、metadata、schema、CLI、样例 segment、KWIC、claim review、解释札记和维护计划。但样例文本仍然是 pipeline 测试数据，不能作为正式古籍证据引用。
 
-项目目前以两部示例文本为起点：
+V2 now contains a project scaffold, configuration, metadata, schemas, CLI, sample segments, KWIC output, claim review, interpretive note, and maintenance plan. However, the sample passages are pipeline test data and must not be cited as verified source evidence.
 
-- 1674 年南怀仁《坤輿圖說》；
-- 1799 年蒋友仁《地球圖説》。
+| 层级 / Layer | 位置 / Location | 当前状态 / Current Status |
+|---|---|---|
+| 项目配置 / Project configuration | `V2/config/project.yml` | 已建立 / established |
+| 领域词表 / Domain lexicon | `V2/config/domain_lexicon_seed.csv` | 已建立 seed，可扩展 / seed established, extensible |
+| 文献 metadata / Document metadata | `V2/data/metadata/documents_seed.csv` | 已有两条 pilot records / two pilot records available |
+| 数据模型 / Data schemas | `V2/schemas/` | 已有 Document、Segment、Claim 等 schema / Document, Segment, Claim schemas available |
+| CLI 入口 / CLI entry point | `V2/scripts/dh_v2.py` | 可运行最低维护命令 / minimum maintenance commands available |
+| 样例数据 / Sample data | `V2/data/processed/sample_segments.jsonl` | 仅用于测试 pipeline / only for pipeline testing |
+| 研究案例 / Research case | `V2/cases/kunyu_diqiu_comparison/` | 已有可扩展案例结构 / expandable case structure available |
+| 维护计划 / Maintenance plan | `V2/docs/MAINTENANCE_PLAN.md` | 已建立 / established |
 
-这两部文献只是入口。项目的长期目标，是整理和分析更大范围内的明清西学中文文献，尤其是传教士著述、清廷译述、士人序跋、知识传播文本、地理与天文文本、宗教论辩文本以及相关回应材料。
+---
 
-## 三、核心研究问题
+## 2. 快速开始 / Quick Start
 
-本项目希望长期追踪以下问题：
+进入仓库根目录后，可以直接运行以下命令。
 
-1. 西方地理、天文、制图、数学、自然哲学和宗教知识如何进入中文文本世界？
-2. “地球”“坤舆”“赤道”“经纬”“五洲”“灵魂”“天堂”等概念如何被翻译、解释、改写和本土化？
-3. 传教士中文写作如何在讲解、辩护、奏呈、奉旨译述、士人润色等不同文体之间转换？
-4. 西学知识如何进入清廷制度空间，例如钦天监、内阁、礼部、翰林院等？
-5. 中国士人如何接受、改写、限制或重新解释这些外来知识？
-6. 传教士、清廷官员、儒家学者、翻译者和校订者之间形成了怎样的知识网络？
-7. 当我们使用数据库、脚本、网页和 AI 工具时，传统文献学判断应如何保持其主导地位？
+From the repository root, run the following commands.
 
-## 四、为什么这个项目对传统人文学术有意义
+```bash
+python V2/scripts/dh_v2.py validate-documents
+python V2/scripts/dh_v2.py validate-segments --segments data/processed/sample_segments.jsonl
+python V2/scripts/dh_v2.py export-lexicon
+python V2/scripts/dh_v2.py generate-kwic --segments data/processed/sample_segments.jsonl
+python V2/scripts/dh_v2.py release-manifest
+```
 
-传统人文学术的根基仍然是材料、语境、证据链和解释。DH V2 并不试图削弱这一点，而是试图加强它。
+这些命令不会替代人文学术解释。它们只负责保证项目的 metadata、segment、词表、KWIC 和 release manifest 可以被重复生成。
 
-它希望在以下方面帮助传统研究：
+These commands do not replace humanistic interpretation. They only ensure that metadata, segments, lexicons, KWIC tables, and release manifests can be regenerated.
 
-- **材料整理**：把分散文献、OCR 文本、校勘记录和来源说明统一管理；
-- **文本细读**：通过 KWIC、术语索引和段落定位，帮助研究者回到具体语境；
-- **概念史研究**：追踪术语的出现、变体、共现和解释方式；
-- **知识传播史研究**：比较不同文本中同一知识命题的表达、改写和制度化；
-- **人物网络研究**：连接传教士、士人、官员、机构和外部权威数据库；
-- **研究透明性**：保留 raw data、cleaned data、抽取规则、人工复核状态和版本记录；
-- **教学启发**：为后来学习数字人文的文史学生提供一个可拆解、可复用、可批判的案例。
+---
 
-本项目的基本信念是：数字方法不应替代人文学术判断，而应让学者更稳、更广、更细地掌握材料。
-
-## 五、基本方法
-
-DH V2 采用分层方法，而不是一次性把文本“清洗干净”。
-
-### 1. 原始材料层
-
-保存 OCR、转写文本、来源说明、版本信息和权利状态。原始材料不覆盖、不随意重写。
-
-### 2. 文献整理层
-
-进行 OCR 质量检查、文本校勘、题名与卷次整理、序跋和正文边界标记。
-
-### 3. 结构化数据层
-
-建立文献 metadata、段落 segment、人名、地名、机构、书名、术语、度量衡、知识命题和关系表。
-
-### 4. 解释支持层
-
-通过 KWIC、术语统计、文本相似性、实体索引、authority crosswalk 和研究案例页，帮助研究者形成更有证据支撑的解释。
-
-### 5. 学术界面层
-
-建设面向研究者和学生的网页界面。网页不是展示橱窗，而是证据组织、方法说明和小型数字论文的承载形式。
-
-## 六、数据与证据原则
-
-本项目坚持以下原则：
-
-1. Raw data 永不覆盖。
-2. 清洗规则必须可解释。
-3. 删除数字、音译词、序跋、官职、机构名等操作必须谨慎，因为它们可能正是知识史证据。
-4. 所有实体、术语和知识命题都应保留 evidence_quote。
-5. LLM 或模型输出只能作为候选，不能直接作为学术结论。
-6. 人名、地名、机构、传教士姓名与外部数据库匹配必须保留人工复核状态。
-7. 授权不明的数据不应公开再发布。
-
-## 七、外部权威数据库
-
-项目计划以 crosswalk 的方式接入外部权威数据库，而不是直接复制第三方数据库。
-
-- **CBDB**：用于中国士人、官员、儒者和清廷人物的消歧与背景确认；
-- **CHCD**：用于中国基督教历史中的传教士、机构、空间网络和人物关系；
-- **BDCC**：用于传教士与中国基督徒的传记说明；
-- **其他资源**：如 Ricci 相关数据库，可作为传教士姓名、著述和机构信息的补充。
-
-外部数据库不替代原文。它们只是帮助研究者更好地识别人物、地点、机构和关系。
-
-## 八、项目结构
+## 3. 目录结构 / Directory Structure
 
 ```text
 V2/
-  README.md                         项目总说明
-  docs/                             方法、授权、治理、Web 学术界面说明
-  data/
-    raw/                            原始文本，不覆盖
-    metadata/                       文献、人名、术语、authority crosswalk
-    processed/                      清洗后文本与分段文本
-    external_authorities/           外部数据库接入说明与索引
-  scripts/                          inventory、清洗、抽取、校验、release 脚本
-  schemas/                          Document / Segment / Entity / Claim 等 schema
-  outputs/
-    qc/                             质量检查报告
-    features/                       抽取结果
-    reports/                        研究报告
-  web/                              学术界面与教学展示站点
-  teaching/                         教学模块
-  project_management/               roadmap、maturity checklist、任务书
+├── README.md
+├── pyproject.toml
+├── config/
+│   ├── project.yml
+│   └── domain_lexicon_seed.csv
+├── data/
+│   ├── metadata/
+│   │   └── documents_seed.csv
+│   └── processed/
+│       └── sample_segments.jsonl
+├── schemas/
+│   ├── document.schema.json
+│   ├── segment.schema.json
+│   └── claim.schema.json
+├── scripts/
+│   ├── __init__.py
+│   └── dh_v2.py
+├── tests/
+│   └── test_cli_smoke.py
+├── cases/
+│   └── kunyu_diqiu_comparison/
+│       ├── README.md
+│       ├── evidence_table.csv
+│       ├── kwic_terms.csv
+│       ├── claims_review.csv
+│       └── interpretive_note.md
+├── docs/
+│   └── MAINTENANCE_PLAN.md
+├── outputs/
+└── releases/
 ```
 
-## 九、当前成熟度目标
+---
 
-V2 应逐步具备一个成熟项目应有的内容：
+## 4. 项目对象 / Project Objects
 
-- 清楚的研究问题；
-- 明确的材料范围；
-- 稳定的数据模型；
-- 可复现的清洗和抽取流程；
-- 文献学复核机制；
-- 外部权威数据库接入策略；
-- 授权与数据发布规范；
-- 面向后续研究者的网页界面；
-- 可教学、可扩展、可批判的项目结构。
+V2 的核心对象不是“网页页面”，而是可追踪的研究对象。
 
-## 十、V1 与 V2 的关系
+The core objects of V2 are not web pages, but traceable research objects.
 
-V1 是 workshop 原型，证明 OCR、ChatGPT Code Interpreter、CkipTagger、N-gram 等方法在该材料上具有初步可行性。
+| 对象 / Object | 作用 / Function |
+|---|---|
+| Document | 保存文献级信息，例如题名、作者、年代、来源、OCR 状态、权利状态。 / Stores document-level information such as title, author, date, source, OCR status, and rights status. |
+| Segment | 保存可引用文本片段，每段必须有 `document_id` 和 `segment_id`。 / Stores citable textual segments; every segment must have `document_id` and `segment_id`. |
+| Term | 保存术语、规范形式、类别和说明。 / Stores terms, normalized forms, categories, and notes. |
+| Claim | 保存知识命题候选、证据引文、抽取方法和人工复核状态。 / Stores candidate knowledge claims, evidence quotes, extraction methods, and human review status. |
+| Case | 保存一个可复核的小型研究单元。 / Stores a reviewable small research unit. |
+| Release | 保存可发布版本的 manifest 和说明。 / Stores manifest and notes for a publishable version. |
 
-V2 不是 V1 的增强展示版，而是对研究目标的重新定义：从“展示一个分析流程”转向“建立一个可持续运行的明清西学文献研究平台”。
+---
 
-V1 应被冻结归档。V2 应独立发展，并持续吸收新的材料、方法和研究问题。
+## 5. 最小 pipeline / Minimum Pipeline
 
-## 十一、项目愿景
+V2 的最低闭环如下。
 
-DH V2 最终希望成为一个能被后来研究者继续使用的项目：它既可以支撑具体论文，也可以作为数字人文课程案例；既可以服务明清西学史、耶儒对话和中国基督教史研究，也可以启发其他文史方向如何将传统材料、数字工具和网页界面结合起来。
+The minimum closed loop of V2 is as follows.
 
-本项目的目标不是让人文学术变得“技术化”，而是让技术重新服从于人文学术的核心任务：更可靠地保存材料，更精确地组织证据，更细致地解释文本，更开放地启发后来的研究。
+```text
+metadata
+  ↓
+segments
+  ↓
+lexicon
+  ↓
+KWIC
+  ↓
+claims_review
+  ↓
+interpretive_note
+  ↓
+release_manifest
+```
+
+每一步都必须保留证据、来源和不确定性。
+
+Every step must preserve evidence, source information, and uncertainty.
+
+---
+
+## 6. 样例数据说明 / Note on Sample Data
+
+`V2/data/processed/sample_segments.jsonl` 中的文本是为了测试 pipeline 而设的 synthetic sample。它们不是经过核验的古籍原文。
+
+The texts in `V2/data/processed/sample_segments.jsonl` are synthetic samples for pipeline testing. They are not verified historical source passages.
+
+正式研究必须用经过来源核验的文本替换样例数据，并补充版本、页码、卷次、OCR 状态和校勘说明。
+
+Formal research must replace sample data with source-verified texts and add edition, page, fascicle, OCR status, and collation notes.
+
+---
+
+## 7. 新增文献 / Adding a New Text
+
+新增文献时，不应直接把文本放进仓库后开始分析，而应经过固定流程。
+
+When adding a new text, do not simply place it in the repository and start analysis. Follow a fixed workflow.
+
+1. 将原始文件放入 `V2/data/raw/`。
+2. 在 `V2/data/metadata/documents_seed.csv` 添加 metadata。
+3. 运行 `validate-documents`。
+4. 建立 segment JSONL。
+5. 运行 `validate-segments`。
+6. 按需要扩展 `domain_lexicon_seed.csv`。
+7. 生成 KWIC。
+8. 建立或扩展研究 case。
+9. 对 claim 做人工复核。
+10. 写 interpretive note。
+
+1. Place raw files in `V2/data/raw/`.
+2. Add metadata to `V2/data/metadata/documents_seed.csv`.
+3. Run `validate-documents`.
+4. Create segment JSONL.
+5. Run `validate-segments`.
+6. Extend `domain_lexicon_seed.csv` if needed.
+7. Generate KWIC.
+8. Create or extend a research case.
+9. Manually review claims.
+10. Write an interpretive note.
+
+---
+
+## 8. 新增研究案例 / Adding a New Research Case
+
+每个研究案例至少应包含以下文件。
+
+Each research case should contain at least the following files.
+
+```text
+case_name/
+├── README.md
+├── evidence_table.csv
+├── kwic_terms.csv
+├── claims_review.csv
+└── interpretive_note.md
+```
+
+研究案例不是展示页，而是证据、方法、复核和解释的组合。
+
+A research case is not a display page. It is a combination of evidence, method, review, and interpretation.
+
+---
+
+## 9. 发展路线 / Development Roadmap
+
+### Phase 1: Scaffold stabilization
+### 第一阶段：项目骨架稳定化
+
+- 保持 README、config、metadata、schemas、CLI、tests 一致。
+- Keep README, config, metadata, schemas, CLI, and tests consistent.
+
+### Phase 2: Source replacement
+### 第二阶段：替换真实材料
+
+- 用经过来源核验的《坤輿圖說》《地球圖説》文本替换 sample segment。
+- Replace sample segments with source-verified passages from *Kunyu Tushuo* and *Diqiu Tushuo*.
+
+### Phase 3: Case completion
+### 第三阶段：完成第一个研究案例
+
+- 补全 KWIC、evidence table、claims review 和 interpretive note。
+- Complete KWIC, evidence table, claims review, and interpretive note.
+
+### Phase 4: Corpus expansion
+### 第四阶段：扩展语料
+
+- 加入更多明清西学文献，复用同一 metadata、segment、claim 和 case 结构。
+- Add more Ming-Qing Western Learning texts while reusing the same metadata, segment, claim, and case structure.
+
+### Phase 5: Scholarly interface
+### 第五阶段：学术界面
+
+- 在不牺牲证据透明性的前提下建设网页界面。
+- Build a web interface without sacrificing evidence transparency.
+
+---
+
+## 10. 判断标准 / Maturity Criteria
+
+只有当以下条件满足时，V2 才能称为成熟项目。
+
+V2 should be considered mature only when the following conditions are met.
+
+- 至少一个研究案例使用真实核验文本，而不是 sample data。
+- At least one research case uses source-verified texts rather than sample data.
+- 每条 claim 都有 evidence quote 和 review status。
+- Every claim has an evidence quote and review status.
+- metadata、segment、KWIC、claim review 和 release manifest 可以重复生成。
+- Metadata, segments, KWIC, claim review, and release manifest can be regenerated.
+- 新增文献有稳定流程，而不是临时处理。
+- New texts can be added through a stable workflow rather than ad hoc processing.
+- README、V2 README 和维护文档保持一致。
+- The root README, V2 README, and maintenance documentation remain consistent.
+
+---
+
+## 11. 研究底线 / Scholarly Bottom Line
+
+V2 的最终目标不是让机器替研究者做结论，而是让研究者更可靠地组织材料、保存证据、控制不确定性，并提出可以被复核的解释。
+
+The final goal of V2 is not to let machines make conclusions for researchers. It is to help researchers organize sources, preserve evidence, control uncertainty, and formulate interpretations that can be reviewed.
