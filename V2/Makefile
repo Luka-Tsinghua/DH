@@ -1,4 +1,4 @@
-.PHONY: validate raw segments kwic evidence release test pipeline
+.PHONY: validate raw segments kwic evidence case release test pipeline
 
 validate:
 	python scripts/dh_v2.py validate-documents
@@ -17,10 +17,13 @@ kwic:
 evidence:
 	python scripts/dh_v2.py generate-evidence-table --kwic outputs/features/full_kwic_terms.csv --output outputs/features/full_evidence_table.csv --limit 200
 
+case:
+	python scripts/build_case.py --config cases/kunyu_diqiu_comparison/case_config.json
+
 release:
 	python scripts/dh_v2.py release-manifest
 
 test:
 	pytest tests
 
-pipeline: validate segments kwic evidence release
+pipeline: validate segments kwic evidence case release
