@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """DH VR/V2 command line utility.
 
-This script is intentionally dependency-light. It is designed to make the V2
-project maintainable before the project introduces heavier NLP, database, or web
-framework layers.
+This script is intentionally dependency-light. It gives the V2 project a
+maintainable command surface before heavier NLP, database, or web layers are
+introduced.
 
 Core commands:
 
@@ -25,7 +25,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Dict, Iterable, List, Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 V2_ROOT = REPO_ROOT / "V2"
@@ -280,13 +280,19 @@ def iter_project_files(base: Path) -> Iterable[Path]:
             yield path
 
 
+def _relative_to_repo(path: Path) -> str:
+    try:
+        return path.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
 def command_generate_manifest(args: argparse.Namespace) -> int:
     base = Path(args.base)
     files = []
     for path in sorted(iter_project_files(base)):
-        rel = path.relative_to(REPO_ROOT).as_posix()
         files.append({
-            "path": rel,
+            "path": _relative_to_repo(path),
             "size_bytes": path.stat().st_size,
             "sha256": sha256_file(path),
         })
@@ -294,7 +300,7 @@ def command_generate_manifest(args: argparse.Namespace) -> int:
     payload = {
         "project": "DH VR / V2 Research Version",
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "base": base.relative_to(REPO_ROOT).as_posix() if base.is_relative_to(REPO_ROOT) else str(base),
+        "base": _relative_to_repo(base),
         "file_count": len(files),
         "files": files,
     }
