@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Luka-Tsinghua/DH/V2/schemas/segment.schema.json",
+  "title": "Segment",
+  "type": "object",
+  "required": ["segment_id", "document_id", "segment_index", "text"],
+  "properties": {
+    "segment_id": {"type": "string"},
+    "document_id": {"type": "string"},
+    "segment_index": {"type": "integer", "minimum": 0},
+    "text": {"type": "string"},
+    "text_type": {"type": "string"},
+    "chapter_title": {"type": "string"},
+    "page_ref": {"type": "string"},
+    "char_start": {"type": ["integer", "null"]},
+    "char_end": {"type": ["integer", "null"]},
+    "source_file": {"type": "string"},
+    "confidence_level": {"enum": ["high", "medium", "low", "unknown"]},
+    "notes": {"type": "string"}
+  },
+  "additionalProperties": true
+}
