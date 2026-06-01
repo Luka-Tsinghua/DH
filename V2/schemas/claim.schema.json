@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Luka-Tsinghua/DH/V2/schemas/claim.schema.json",
+  "title": "Claim",
+  "type": "object",
+  "required": [
+    "claim_id",
+    "document_id",
+    "segment_id",
+    "claim_text",
+    "evidence_quote",
+    "claim_status"
+  ],
+  "properties": {
+    "claim_id": {"type": "string"},
+    "document_id": {"type": "string"},
+    "segment_id": {"type": "string"},
+    "claim_text": {"type": "string"},
+    "claim_type": {"enum": ["geographical", "astronomical", "theological", "historical", "philological", "translation", "institutional", "other"]},
+    "evidence_quote": {"type": "string", "minLength": 1},
+    "interpretive_note": {"type": "string"},
+    "source_basis": {"type": "string"},
+    "extraction_method": {"enum": ["human", "script", "llm_candidate", "mixed", "unknown"]},
+    "claim_status": {"enum": ["candidate", "reviewed", "accepted", "rejected", "needs_collation"]},
+    "reviewer": {"type": "string"},
+    "review_date": {"type": "string"},
+    "uncertainty_note": {"type": "string"}
+  },
+  "additionalProperties": true
+}
