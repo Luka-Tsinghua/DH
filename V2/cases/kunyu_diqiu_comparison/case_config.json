@@ -1,0 +1,32 @@
+{
+  "case_id": "kunyu_diqiu_comparison",
+  "title_zh": "《坤輿圖說》与《地球圖説》比较研究案例",
+  "title_en": "Comparing Kunyu Tushuo and Diqiu Tushuo",
+  "segments": "data/processed/full_segments.jsonl",
+  "fallback_segments": "data/processed/verified_excerpt_segments.jsonl",
+  "lexicon": "config/domain_lexicon_seed.csv",
+  "focus_terms": [
+    "坤輿",
+    "坤舆",
+    "地球",
+    "赤道",
+    "經線",
+    "緯線",
+    "經度",
+    "緯度",
+    "五洲",
+    "四海",
+    "測量",
+    "天主",
+    "天堂",
+    "靈魂"
+  ],
+  "window": 18,
+  "outputs": {
+    "kwic": "cases/kunyu_diqiu_comparison/generated/kwic_terms_full.csv",
+    "evidence": "cases/kunyu_diqiu_comparison/generated/evidence_table_candidates.csv",
+    "claims": "cases/kunyu_diqiu_comparison/generated/claims_review_candidates.csv",
+    "report": "cases/kunyu_diqiu_comparison/generated/case_build_report.json"
+  },
+  "notes": "Use full_segments.jsonl when available. fallback_segments is only for early pilot operation before full raw-source segmentation is generated. Generated outputs are candidates and require human review before being copied into the curated case files."
+}
