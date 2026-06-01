@@ -1,0 +1,20 @@
+term,normalized_form,category,subcategory,language,note
+地球,地球,geography,earth,zh,core term for spherical earth and terrestrial knowledge
+坤舆,坤舆,geography,earth,zh,traditional cosmographic expression
+坤輿,坤舆,geography,earth,zh,traditional variant form
+赤道,赤道,geography,latitude,zh,equator
+經線,经线,geography,longitude,zh,longitude line
+緯線,纬线,geography,latitude,zh,latitude line
+經度,经度,geography,longitude,zh,longitude
+緯度,纬度,geography,latitude,zh,latitude
+五洲,五洲,geography,world_division,zh,continental classification
+四海,四海,geography,world_order,zh,traditional spatial expression
+測量,测量,measurement,method,zh,measurement practice
+度,度,measurement,unit,zh,degree or measure depending on context
+分,分,measurement,unit,zh,minute or subdivision depending on context
+秒,秒,measurement,unit,zh,second or subdivision depending on context
+里,里,measurement,unit,zh,distance unit
+天主,天主,religion,theology,zh,Christian theological term
+天堂,天堂,religion,afterlife,zh,Christian and translated religious term
+靈魂,灵魂,religion,anthropology,zh,soul term
+造物,造物,religion,natural_theology,zh,creation term
