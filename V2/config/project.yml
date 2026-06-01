@@ -1,0 +1,54 @@
+project:
+  id: dh_vr_v2
+  title_zh: 明清西学文本与跨文化知识史研究项目
+  title_en: Ming-Qing Western Learning Texts and Transcultural Knowledge History Project
+  active_version: VR / V2 Research Version
+  main_directory: V2
+  historical_directory: DH
+  status: research_infrastructure
+
+principles:
+  - raw_data_is_never_overwritten
+  - philological_judgment_precedes_automation
+  - every_claim_requires_evidence_quote
+  - model_outputs_are_candidates
+  - uncertainty_must_remain_visible
+  - third_party_authority_data_must_keep_original_license
+
+paths:
+  raw_data: V2/data/raw
+  metadata: V2/data/metadata
+  processed_data: V2/data/processed
+  external_authorities: V2/data/external_authorities
+  schemas: V2/schemas
+  scripts: V2/scripts
+  outputs: V2/outputs
+  qc_reports: V2/outputs/qc
+  feature_outputs: V2/outputs/features
+  research_reports: V2/outputs/reports
+  cases: V2/cases
+  releases: V2/releases
+  web: V2/web
+
+core_objects:
+  - Document
+  - Segment
+  - Entity
+  - Term
+  - Claim
+  - Relation
+  - AuthorityCrosswalk
+
+pilot_texts:
+  - document_id: kunyutushuo_1674
+    title_zh: 坤輿圖說
+    title_en: Kunyu Tushuo
+    year: 1674
+    main_person: 南怀仁 / Ferdinand Verbiest
+    role: pilot_source
+  - document_id: diqiutushuo_1799
+    title_zh: 地球圖説
+    title_en: Diqiu Tushuo
+    year: 1799
+    main_person: 蒋友仁 / Michel Benoist
+    role: pilot_source
