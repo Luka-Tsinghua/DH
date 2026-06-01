@@ -1,123 +1,138 @@
 # Data License and Release Policy
 
-## 一、项目内部材料分级
+## 1. Material levels
 
-V2 将材料分为五级：
+V2 uses layered licensing and release rules. Do not apply one license to all materials.
 
-### Level 0：代码与项目文档
+### Level 0: code and project documentation
 
-包括：
+Examples:
 
-- scripts；
-- schema；
-- project docs；
-- task docs；
-- metadata templates。
+- scripts;
+- schemas;
+- project documentation;
+- workflow documentation;
+- templates.
 
-建议授权：
+Recommended license: repository code/documentation license.
 
-- MIT 或 Apache-2.0。
+### Level 1: project-created metadata
 
-### Level 1：项目自建 metadata
+Examples:
 
-包括：
+- document metadata;
+- term lists;
+- review logs;
+- QC reports;
+- release manifests.
 
-- documents.csv；
-- terms.csv；
-- manually verified authority crosswalk；
-- cleaning logs；
-- QC reports。
+Recommended license: CC BY 4.0 or CC BY-NC 4.0, unless another source license applies.
 
-建议授权：
+### Level 2: raw texts and OCR outputs
 
-- CC BY 4.0 或 CC BY-NC 4.0；
-- 若混入 CBDB 派生字段，则必须兼容 CC BY-NC-SA 4.0。
+Examples:
 
-### Level 2：原始 OCR 文本
+- raw OCR;
+- WS text files;
+- transcribed source texts;
+- source-derived text files.
 
-包括：
+Policy:
 
-- raw OCR；
-- 影印本转写文本；
-- 从丛书、数据库、扫描件整理出的文本。
+- record source for each item;
+- do not assume public redistribution rights;
+- do not overwrite raw files;
+- check source, edition, scan provider, and database terms before public release;
+- public-domain source texts still need digital-source attribution.
 
-授权策略：
+### Level 3: generated candidate outputs
 
-- 逐项记录来源；
-- 不默认公开；
-- 公开前确认原书版权、影印本来源和数据库授权；
-- 对公版古籍文本也要注明数字化来源。
+Examples:
 
-### Level 3：外部 authority 派生数据
+- full segments generated from raw source;
+- KWIC files;
+- candidate evidence tables;
+- candidate claim tables;
+- case build reports.
 
-包括：
+Policy:
 
-- CBDB 派生字段；
-- CHCD 对应项；
-- BDCC 对应项；
-- RicciBase 对应项。
+- mark as generated or candidate;
+- keep reproducible scripts and parameters;
+- do not cite as reviewed scholarship;
+- promote rows to curated case files only after human review.
 
-授权策略：
+### Level 4: curated scholarly outputs
 
-- 只发布 external_id 与 minimal crosswalk；
-- 不再发布第三方数据库原文或完整记录；
-- 遵守各数据库授权；
-- 授权不明时只保存内部研究记录。
+Examples:
 
-### Level 4：研究报告与论文草稿
+- reviewed evidence tables;
+- reviewed claims;
+- interpretive notes;
+- digital essays;
+- article drafts.
 
-包括：
+Policy:
 
-- pilot report；
-- corpus report；
-- article drafts；
-- interpretive essays。
+- author retains scholarly responsibility;
+- cite source files, document ids, segment ids, and evidence quotes;
+- public release may use CC BY-NC-ND 4.0 or another author-selected license.
 
-建议授权：
+### Level 5: external authority data
 
-- Copyright retained by author；
-- 公开版本可使用 CC BY-NC-ND 4.0。
+Examples:
 
-## 二、绝对禁止
+- CBDB crosswalks;
+- CHCD links;
+- BDCC links;
+- Ricci-related authority links;
+- other external identifiers.
 
-- 不得把所有数据一律标记为 MIT。
-- 不得把 CBDB 数据打包进本仓库后标记为 MIT。
-- 不得批量再发布 BDCC 全文。
-- 不得在未确认授权时公开 CHCD 原始数据。
-- 不得去除数据来源说明。
+Policy:
 
-## 三、推荐发布方式
+- publish only minimal crosswalks when allowed;
+- do not republish third-party database records;
+- keep original source and license notes;
+- store uncertain or restricted authority notes internally.
 
-每次 release 分为：
+## 2. Prohibited actions
+
+- Do not mark all data as MIT.
+- Do not overwrite raw sources.
+- Do not publish generated candidate claims as final conclusions.
+- Do not remove source notes.
+- Do not bundle third-party database records without checking rights.
+
+## 3. Recommended release types
 
 ```text
 code-release
 metadata-release
-sample-data-release
+generated-candidate-release
+curated-case-release
 research-report-release
 ```
 
-不要把所有内容混成一个 release。
+Each release should state scope, source basis, review status, and license notes.
 
-## 四、仓库 LICENSE 建议
+## 4. Citation fields
 
-本仓库可采用“双层授权”：
+Every release should include:
 
-```text
-Code and documentation: MIT
-Project-created metadata: CC BY 4.0 unless otherwise noted
-Third-party-derived data: governed by original source licenses
-Raw texts: source-specific; not automatically redistributable
-```
+- version;
+- release date;
+- commit hash;
+- data scope;
+- source list;
+- license note;
+- citation suggestion.
 
-## 五、引用格式
+Every case-level claim should preserve:
 
-每个 release 应包含：
-
-- version；
-- release date；
-- commit hash；
-- data scope；
-- source list；
-- license note；
-- citation suggestion。
+- document id;
+- segment id;
+- source file;
+- evidence quote;
+- review status;
+- reviewer when available;
+- review date when available.
