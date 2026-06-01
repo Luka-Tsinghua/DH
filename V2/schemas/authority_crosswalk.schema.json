@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Luka-Tsinghua/DH/V2/schemas/authority_crosswalk.schema.json",
+  "title": "AuthorityCrosswalk",
+  "type": "object",
+  "required": ["local_id", "local_name", "authority_source", "authority_id", "match_status"],
+  "properties": {
+    "local_id": {"type": "string"},
+    "local_name": {"type": "string"},
+    "local_type": {"enum": ["person", "place", "institution", "text", "term", "other"]},
+    "authority_source": {"type": "string"},
+    "authority_id": {"type": "string"},
+    "authority_uri": {"type": "string"},
+    "match_status": {"enum": ["candidate", "verified", "rejected", "ambiguous", "not_found"]},
+    "match_basis": {"type": "string"},
+    "matched_label": {"type": "string"},
+    "matched_dates": {"type": "string"},
+    "matched_note": {"type": "string"},
+    "reviewer": {"type": "string"},
+    "review_date": {"type": "string"},
+    "license_note": {"type": "string"}
+  },
+  "additionalProperties": true
+}
