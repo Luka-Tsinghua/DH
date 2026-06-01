@@ -1,4 +1,4 @@
-.PHONY: validate raw segments kwic evidence case release test pipeline
+.PHONY: validate raw segments kwic evidence case release test pipeline all
 
 validate:
 	python scripts/dh_v2.py validate-documents
@@ -27,3 +27,5 @@ test:
 	pytest tests
 
 pipeline: validate segments kwic evidence case release
+
+all: pipeline test
