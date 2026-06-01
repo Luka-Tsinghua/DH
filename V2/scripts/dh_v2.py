@@ -28,10 +28,6 @@ DEFAULT_FULL_SEGMENTS = "data/processed/full_segments.jsonl"
 DEFAULT_LEXICON = "config/domain_lexicon_seed.csv"
 
 
-# ---------------------------------------------------------------------------
-# Basic IO
-# ---------------------------------------------------------------------------
-
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -42,7 +38,6 @@ def resolve_project_path(value: str) -> Path:
 
 
 def resolve_repo_path(value: str) -> Path:
-    """Resolve paths that may be relative to V2 or to the repository root."""
     path = Path(value)
     if path.is_absolute():
         return path
@@ -120,10 +115,6 @@ def sha256_file(path: Path) -> str:
             h.update(chunk)
     return h.hexdigest()
 
-
-# ---------------------------------------------------------------------------
-# Validation
-# ---------------------------------------------------------------------------
 
 def validate_documents(args: argparse.Namespace) -> None:
     metadata_path = resolve_project_path(args.metadata)
@@ -270,17 +261,7 @@ def validate_segments(args: argparse.Namespace) -> None:
     print(f"Segment validation passed: {len(rows)} segment(s). Report: {output_path}")
 
 
-# ---------------------------------------------------------------------------
-# Text processing
-# ---------------------------------------------------------------------------
-
 def normalize_ws_text(text: str) -> str:
-    """Normalize WS/OCR-style text by removing tokenization whitespace.
-
-    The root-level WS files store Chinese text with heavy spacing between tokens.
-    For KWIC and segment-level evidence, V2 keeps a normalized continuous text.
-    Formal philological citation should still check the raw source file.
-    """
     text = text.replace("\ufeff", "")
     text = re.sub(r"\s+", "", text)
     return text.strip()
@@ -361,6 +342,17 @@ def build_segments_from_raw(args: argparse.Namespace) -> None:
 
 def load_terms(path: Path) -> list[dict[str, str]]:
     return [row for row in read_csv(path) if row.get("term", "").strip()]
+
+
+def export_lexicon(args: argparse.Namespace) -> None:
+    lexicon_path = resolve_project_path(args.lexicon)
+    rows = load_terms(lexicon_path)
+    grouped: dict[str, list[dict[str, str]]] = {}
+    for row in rows:
+        grouped.setdefault(row.get("category", "uncategorized") or "uncategorized", []).append(row)
+    output_path = resolve_project_path(args.output)
+    write_json(output_path, grouped)
+    print(f"Exported {len(rows)} lexicon term(s): {output_path}")
 
 
 def generate_kwic(args: argparse.Namespace) -> None:
@@ -452,10 +444,6 @@ def generate_evidence_table(args: argparse.Namespace) -> None:
     print(f"Generated {len(evidence_rows)} evidence candidate(s): {output_path}")
 
 
-# ---------------------------------------------------------------------------
-# Release manifest
-# ---------------------------------------------------------------------------
-
 def iter_files(base: Path) -> Iterable[Path]:
     skip_dirs = {".git", "__pycache__", ".pytest_cache", "node_modules"}
     for path in sorted(base.rglob("*")):
@@ -487,10 +475,6 @@ def release_manifest(args: argparse.Namespace) -> None:
     print(f"Release manifest generated with {len(files)} file(s): {output_path}")
 
 
-# ---------------------------------------------------------------------------
-# Parser
-# ---------------------------------------------------------------------------
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="dh_v2", description="DH VR/V2 maintenance CLI")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -518,6 +502,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-chars", type=int, default=450)
     p.add_argument("--min-chars", type=int, default=120)
     p.set_defaults(func=build_segments_from_raw)
+
+    p = sub.add_parser("export-lexicon")
+    p.add_argument("--lexicon", default=DEFAULT_LEXICON)
+    p.add_argument("--output", default="outputs/features/domain_lexicon.json")
+    p.set_defaults(func=export_lexicon)
 
     p = sub.add_parser("generate-kwic")
     p.add_argument("--segments", default=DEFAULT_SAMPLE_SEGMENTS)
