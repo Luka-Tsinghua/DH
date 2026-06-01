@@ -1,0 +1,3 @@
+claim_id,document_id,segment_id,claim_type,claim_text,evidence_quote,extraction_method,claim_status,reviewer,review_date,uncertainty_note
+CLAIM-KD-0001,kunyutushuo_1674,kunyutushuo_1674_s0001,geographical,Sample claim: the passage associates 坤輿 with 地球.,坤輿之形，地球也。赤道居其中，經緯分其度。,human,candidate,,,Synthetic sample only; replace with verified source evidence.
+CLAIM-KD-0002,diqiutushuo_1799,diqiutushuo_1799_s0001,geographical,Sample claim: the passage connects 地球 with 經度 緯度 赤道 and 五洲.,地球有經度緯度，以赤道為中界，分五洲之地。,human,candidate,,,Synthetic sample only; replace with verified source evidence.
