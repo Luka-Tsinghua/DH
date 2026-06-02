@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+title: "DH VR / V2 Research Version"
+message: "Please cite this repository by version or commit hash when using the code, data model, or curated research outputs."
+type: software
+authors:
+  - family-names: Xue
+    given-names: Ke
+version: "0.2.0"
+date-released: "2026-06-01"
+keywords:
+  - digital humanities
+  - Chinese intellectual history
+  - Ming-Qing Western Learning
+  - Jesuit studies
+  - history of knowledge
+  - philology
+  - textual evidence
+license: "LicenseRef-Repository-Specific"
