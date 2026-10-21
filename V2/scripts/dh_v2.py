@@ -445,9 +445,9 @@ def generate_evidence_table(args: argparse.Namespace) -> None:
 
 
 def iter_files(base: Path) -> Iterable[Path]:
-    skip_dirs = {".git", "__pycache__", ".pytest_cache", "node_modules"}
+    skip_dirs = {".git", "__pycache__", ".pytest_cache", ".venv", "venv", "node_modules", "build", "dist"}
     for path in sorted(base.rglob("*")):
-        if any(part in skip_dirs for part in path.parts):
+        if any(part in skip_dirs or part.endswith(".egg-info") for part in path.relative_to(base).parts):
             continue
         if path.is_file():
             yield path
@@ -455,8 +455,11 @@ def iter_files(base: Path) -> Iterable[Path]:
 
 def release_manifest(args: argparse.Namespace) -> None:
     base = resolve_project_path(args.base)
+    output_path = resolve_project_path(args.output)
     files: list[dict[str, object]] = []
     for path in iter_files(base):
+        if path.resolve() == output_path.resolve():
+            continue
         files.append({
             "path": safe_relative(path),
             "size_bytes": path.stat().st_size,
@@ -470,14 +473,40 @@ def release_manifest(args: argparse.Namespace) -> None:
         "generated_at": now_iso(),
         "note": "Manifest records repository files for review and release handoff. Generated analysis remains candidate material until human review.",
     }
-    output_path = resolve_project_path(args.output)
     write_json(output_path, manifest)
     print(f"Release manifest generated with {len(files)} file(s): {output_path}")
+
+
+def run_pipeline(args: argparse.Namespace) -> None:
+    """Run the same ordered, local workflow on every supported platform."""
+    for command in [
+        ["validate-documents"],
+        ["validate-raw-sources"],
+        ["build-segments-from-raw"],
+        ["validate-segments", "--segments", DEFAULT_FULL_SEGMENTS],
+        ["generate-kwic", "--segments", DEFAULT_FULL_SEGMENTS,
+         "--output", "outputs/features/full_kwic_terms.csv"],
+        ["generate-evidence-table", "--kwic", "outputs/features/full_kwic_terms.csv",
+         "--output", "outputs/features/full_evidence_table.csv", "--limit", "200"],
+    ]:
+        main(command)
+
+    if __package__:
+        from .build_case import main as build_case
+    else:
+        from build_case import main as build_case
+
+    build_case(["--config", args.case_config])
+    main(["release-manifest"])
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="dh_v2", description="DH VR/V2 maintenance CLI")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    p = sub.add_parser("pipeline", help="validate sources and build all candidate outputs")
+    p.add_argument("--case-config", default="cases/kunyu_diqiu_comparison/case_config.json")
+    p.set_defaults(func=run_pipeline)
 
     p = sub.add_parser("validate-documents")
     p.add_argument("--metadata", default=DEFAULT_DOCUMENTS)

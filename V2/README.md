@@ -1,159 +1,103 @@
-# DH V2：明清西学文本与跨文化知识史研究项目
+# DH V2 使用指南
 
-V2 是本仓库当前活跃研究版本。它不是数字人文工作坊展示页，而是一个面向长期研究、教学复用和持续维护的人文学术基础设施。
+[项目首页](../README.md) / **V2** / [文档索引](docs/INDEX.md)
 
-## 1. 入口导航
+V2 是 DH 当前活跃的研究工具版本，使用 Python 标准库完成来源校验、文本分段、关键词上下文（KWIC）、证据候选与研究配置构建。所有自动生成的证据和论断均保留 `candidate` 状态。
 
-| 入口 | 用途 |
-|---|---|
-| `docs/INDEX.md` | V2 文档索引 |
-| `docs/PIPELINE.md` | 可复现处理流程 |
-| `docs/METHOD.md` | 方法原则 |
-| `docs/REVIEW.md` | candidate 与 reviewed 的区分 |
-| `docs/DATA_LICENSE_AND_RELEASE_POLICY.md` | 数据与发布政策 |
-| `CONTRIBUTING.md` | V2 贡献规则 |
-| `cases/kunyu_diqiu_comparison/` | 当前核心 case |
+## 运行处理链
 
-## 2. 当前状态
+需要 **Python 3.10+**。在仓库根目录执行：
 
-V2 已经把仓库根目录中的真实 WS 文本登记为 raw source，并建立了从 raw source 到 segment、KWIC、evidence、claim、case、release 的可复现 pipeline。`sample_segments.jsonl` 只保留为 smoke test，不再作为研究主线。
-
-当前真实 raw source：
-
-```text
-1674_坤輿圖說_WS.txt
-1799_地球圖説_WS.txt
+```bash
+python V2/scripts/dh_v2.py pipeline
 ```
 
-## 3. 一键运行
+该命令按顺序校验元数据与原始文本、构建分段、校验分段、生成 KWIC 与证据候选、构建既有研究配置的候选输出，最后写入文件清单。执行中任一步失败会停止后续步骤。
 
-在 `V2/` 目录下运行：
+也可在 `V2/` 内使用既有 Make 入口：
 
 ```bash
 make pipeline
-```
-
-完整检查：
-
-```bash
 make all
 ```
 
-`make pipeline` 会执行：
+`make all` 还会运行测试和文档链接检查，需要先安装开发依赖。
 
-```text
-validate metadata and raw sources
-build full text segments
-generate KWIC
-generate evidence candidates
-build case-level candidate outputs
-generate release manifest
+## 开发安装
+
+在仓库根目录建立独立环境：
+
+```bash
+python -m venv .venv
 ```
 
-`make all` 会在 pipeline 基础上运行 smoke tests。
+激活环境：
 
-## 4. 核心结构
+- macOS / Linux：`source .venv/bin/activate`
+- Windows PowerShell：`.venv\Scripts\Activate.ps1`
 
-```text
-V2/
-├── README.md
-├── CONTRIBUTING.md
-├── Makefile
-├── pyproject.toml
-├── config/
-│   ├── project.yml
-│   └── domain_lexicon_seed.csv
-├── data/
-│   ├── README.md
-│   ├── raw/RAW_SOURCE_MANIFEST.csv
-│   ├── metadata/documents_seed.csv
-│   ├── processed/
-│   │   ├── verified_excerpt_segments.jsonl
-│   │   └── sample_segments.jsonl
-│   └── external_authorities/authority_crosswalk_seed.csv
-├── scripts/
-│   ├── dh_v2.py
-│   └── build_case.py
-├── tests/test_cli_smoke.py
-├── cases/kunyu_diqiu_comparison/
-│   ├── case_config.json
-│   ├── README.md
-│   ├── evidence_table.csv
-│   ├── kwic_terms.csv
-│   ├── claims_review.csv
-│   ├── interpretive_note.md
-│   └── generated/
-├── docs/
-│   ├── INDEX.md
-│   ├── PIPELINE.md
-│   ├── METHOD.md
-│   ├── REVIEW.md
-│   ├── DATA_LICENSE_AND_RELEASE_POLICY.md
-│   ├── MAINTENANCE_PLAN.md
-│   ├── PROJECT_MATURITY_CHECKLIST.md
-│   ├── ROADMAP.md
-│   └── CI_WORKFLOW_TEMPLATE.md
-├── outputs/
-└── releases/
+再安装开发依赖：
+
+```bash
+python -m pip install -e "./V2[dev]"
+dh-v2 --help
+dh-v2-build-case --help
 ```
 
-## 5. 研究对象
+请使用可编辑安装并保留完整仓库：CLI 的默认配置、原始文本与输出路径以仓库位置为基准。Python 包本身不打包或重新授权研究语料。
 
-V2 的核心对象不是网页，而是可追踪的研究对象。
+## 单步命令
 
-```text
-RawSource → Document → Segment → Term → KWIC → Evidence → Claim → Case → Release
+以下命令在仓库根目录运行。CLI 参数中的相对数据路径均以 `V2/` 为基准，与终端当前目录无关。
+
+```bash
+python V2/scripts/dh_v2.py validate-documents
+python V2/scripts/dh_v2.py validate-raw-sources
+python V2/scripts/dh_v2.py build-segments-from-raw
+python V2/scripts/dh_v2.py validate-segments --segments data/processed/full_segments.jsonl
+python V2/scripts/dh_v2.py generate-kwic --segments data/processed/full_segments.jsonl --output outputs/features/full_kwic_terms.csv
+python V2/scripts/dh_v2.py generate-evidence-table --kwic outputs/features/full_kwic_terms.csv --output outputs/features/full_evidence_table.csv
+python V2/scripts/dh_v2.py release-manifest
 ```
 
-自动生成内容只能作为 `candidate`。正式学术结论必须经过人工复核、校勘和解释。
+完整参数见 `python V2/scripts/dh_v2.py --help` 及各子命令的 `--help`。[处理流程](docs/PIPELINE.md)解释规范化、分段及候选结果的含义。
 
-## 6. 当前 case
+## 输入与输出
 
-当前核心 case 是：
+**输入**
 
-```text
-cases/kunyu_diqiu_comparison/
+- [原始文本清单](data/raw/RAW_SOURCE_MANIFEST.csv)：文献标识与来源路径。
+- [文献元数据](data/metadata/documents_seed.csv)：来源、OCR、授权状态等字段。
+- [领域词表](config/domain_lexicon_seed.csv)：关键词、规范形式与分类。
+- 研究目录下的 `case_config.json`：输入分段、关注词与候选输出路径。
+
+**可再生输出**
+
+| 位置（相对 V2） | 内容 |
+| :--- | :--- |
+| `data/processed/full_segments.jsonl` | 固定字符长度的规范化文本分段 |
+| `outputs/qc/` | 元数据、来源、分段的校验与构建报告 |
+| `outputs/features/` | 完整文本 KWIC 与证据候选 CSV |
+| 各研究目录的 `generated/` | 对应配置的 KWIC、证据、论断候选与构建报告 |
+| `releases/manifest.json` | 文件清单与 SHA-256；不包含清单自身和本地环境、缓存 |
+
+生成结果不自动写入人工整理的 CSV 或解释文本。[数据说明](data/README.md)与[复核规则](docs/REVIEW.md)说明各层材料的用途。
+
+## 测试与检查
+
+在已安装开发依赖的环境中，从仓库根目录运行：
+
+```bash
+python -m pytest V2/tests -q
+python V2/scripts/check_docs.py
+python -m py_compile V2/scripts/dh_v2.py V2/scripts/build_case.py
 ```
 
-它比较《坤輿圖說》与《地球圖説》的术语、地理知识表达、图说体裁和制度化翻译语境。`case_config.json` 定义 focus terms、segment source 和输出路径。`scripts/build_case.py` 可以自动生成 case-level KWIC、evidence candidates、claim candidates 和 build report。
+[GitHub Actions](../.github/workflows/v2-ci.yml) 在匹配路径的 `main` 与 `codex/**` 分支推送、面向 `main` 的拉取请求和手动触发时执行检查，覆盖 Python 3.10 / 3.13 与 Windows / Linux 环境。
 
-## 7. 新增文献流程
+## 继续阅读
 
-新增文献时，应按以下流程处理：
-
-1. 把 raw source 放入仓库，或登记既有仓库路径。
-2. 更新 `data/raw/RAW_SOURCE_MANIFEST.csv`。
-3. 更新 `data/metadata/documents_seed.csv`。
-4. 运行 `validate-documents` 和 `validate-raw-sources`。
-5. 运行 `build-segments-from-raw`。
-6. 扩展 `config/domain_lexicon_seed.csv`。
-7. 生成 KWIC 和 evidence candidates。
-8. 建立或扩展 research case。
-9. 人工复核 claims。
-10. 写 interpretive note。
-
-## 8. 新增 case 流程
-
-新增 case 至少应包含：
-
-```text
-case_config.json
-README.md
-evidence_table.csv
-kwic_terms.csv
-claims_review.csv
-interpretive_note.md
-generated/
-```
-
-`generated/` 保存脚本生成的候选结果。人工筛选和复核后的结果才进入 case 根目录下的正式 CSV 与 interpretive note。
-
-## 9. 学术底线
-
-V2 不让机器替研究者下结论。V2 的目标是让研究者更可靠地组织材料、保存证据、控制不确定性，并提出可以被复核的解释。
-
-## 10. 当前成熟度
-
-V2 当前已经达到真实、可复现、可扩展、可维护的最低项目形态。它已经具备真实 raw source、raw manifest、metadata、segment pipeline、case builder、tests、Makefile、CI template、method note、maintenance plan 和 release manifest 机制。
-
-它仍不是完成的学术论文。下一阶段重点是人工复核自动生成的 evidence 和 claims，补充版本、页码、卷次、OCR 状态、校勘说明，并将第一个 case 打磨成可发布的小型数字论文。
+- [文档索引](docs/INDEX.md)：数据、方法、维护与后续设计。
+- [数据模型](docs/DATA_MODEL.md)：文献与证据的结构关系。
+- [V2 贡献规范](CONTRIBUTING.md)：保护原始材料、保留复核字段。
+- [数据与发布政策](docs/DATA_LICENSE_AND_RELEASE_POLICY.md)：分层处理授权；代码许可证尚待确定。

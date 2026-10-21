@@ -5,7 +5,7 @@ This repository is a humanities research project, not only a code repository. Co
 ## Active area
 
 - `V2/` is the active research version.
-- `DH/` is the historical V1 workshop archive.
+- Early workshop files remain at the repository root; the V1 snapshot is on the `v1-original-archive-2026` branch.
 - Root-level WS text files are raw sources and should not be overwritten.
 
 ## Before changing files
@@ -25,10 +25,12 @@ This repository is a humanities research project, not only a code repository. Co
 
 ## Recommended checks
 
-From `V2/` run:
+From the repository root, after installing development dependencies with `python -m pip install -e "./V2[dev]"`, run:
 
 ```bash
-make all
+python V2/scripts/dh_v2.py pipeline
+python -m pytest V2/tests -q
+python V2/scripts/check_docs.py
 ```
 
 If this fails, fix the failing step before expanding the repository further.

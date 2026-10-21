@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+  <title id="title">DH V2</title>
+  <desc id="desc">Digital humanities: a folio, connected evidence, and a geographic arc.</desc>
+  <rect width="1200" height="300" rx="16" fill="#f3f0e7"/>
+  <path d="M0 284H1200V300H0Z" fill="#133e3f"/>
+  <path d="M540 40V260" stroke="#c7c9bc"/>
+  <text x="58" y="217" fill="#153c3d" font-family="Georgia, 'Times New Roman', serif" font-size="200" letter-spacing="-9">DH</text>
+  <rect x="381" y="74" width="92" height="42" rx="21" fill="#153c3d"/>
+  <text x="427" y="103" fill="#f3f0e7" font-family="Arial, sans-serif" font-size="25" text-anchor="middle">V2</text>
+  <g fill="none" stroke="#93aaa0" stroke-width="1.5">
+    <circle cx="1033" cy="150" r="104"/>
+    <ellipse cx="1033" cy="150" rx="44" ry="104"/>
+    <path d="M929 150h208M948 91q85 44 170 0M948 209q85-44 170 0"/>
+  </g>
+  <g stroke="#153c3d" stroke-width="2" fill="#f3f0e7">
+    <rect x="662" y="56" width="166" height="184" rx="6" transform="rotate(-7 745 148)"/>
+    <rect x="677" y="58" width="166" height="184" rx="6"/>
+    <path d="M704 88h54M704 114h110M704 138h110M704 162h68M704 186h110M704 210h86"/>
+    <path d="M843 138h71l62 61h57" fill="none"/>
+  </g>
+  <rect x="697" y="152" width="84" height="20" fill="#d8e4d7"/>
+  <path d="M704 162h68" stroke="#153c3d" stroke-width="2"/>
+  <circle cx="914" cy="138" r="8" fill="#bd5b35"/>
+  <circle cx="1033" cy="199" r="8" fill="#153c3d"/>
+</svg>

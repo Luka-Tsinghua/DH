@@ -7,6 +7,18 @@ This file explains how V2 moves from the root-level real WS texts into a reviewa
 
 ---
 
+## 运行入口 / Run the workflow
+
+在仓库根目录运行完整处理链 / From the repository root:
+
+```bash
+python V2/scripts/dh_v2.py pipeline
+```
+
+以下单步命令同样从仓库根目录运行。数据参数中的相对路径以 `V2/` 为基准。
+
+The individual commands below also run from the repository root. Relative data arguments resolve against `V2/`.
+
 ## 1. 输入 / Inputs
 
 当前登记的 raw source 见：
@@ -46,9 +58,9 @@ Default outputs:
 
 ```text
 V2/data/processed/full_segments.jsonl
-V2/outputs/qc/raw_segment_build_report.json
-V2/outputs/qc/raw_sources_validation.json
-V2/outputs/qc/segments_validation.json
+V2/outputs/qc/build_segments_from_raw_report.json
+V2/outputs/qc/raw_sources_validation_report.json
+V2/outputs/qc/segments_validation_report.json
 ```
 
 生成逻辑：

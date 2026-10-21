@@ -1,164 +1,87 @@
-<div align="center">
+<p align="center">
+  <img src=".github/assets/dh-banner.svg" width="1200" alt="DH V2 — 文献、证据与知识史">
+</p>
 
-# DH VR / V2 Research Version
+# DH · 明清西学文本与跨文化知识史
 
-## 明清西学文本与跨文化知识史研究项目
-## Ming-Qing Western Learning Texts and Transcultural Knowledge History Project
+**Ming-Qing Western Learning Texts & Transcultural Knowledge History**
 
-**以文献为中心，以证据为基础，以数字方法服务传统人文学术。**
+以文献为中心，以证据为基础，以数字方法服务人文学术。DH 为明清西学、耶稣会研究与知识史研究提供一套轻量的文本处理与证据整理工具，让来源、文本片段和解释之间的关系可以追溯、复核与重现。
 
-</div>
+A lightweight research toolkit for organizing historical texts, tracing textual evidence, and keeping interpretation open to review.
 
----
+**Python ≥ 3.10 · 标准库运行 · 当前研究版本 V2**
 
-## 1. 项目一句话说明
-
-本仓库是一个面向中国思想史、明清西学、耶稣会研究、知识史与数字人文方法的长期研究项目。它最初来自 2023 年数字人文工作坊实验材料，但当前主线 `V2/` 已经重构为可复现、可扩展、可维护的人文学术研究基础设施。
-
-This repository is a long-term humanities research project for Chinese intellectual history, Ming-Qing Western Learning, Jesuit studies, history of knowledge, and digital humanities. It began from 2023 workshop materials, but the active `V2/` line is now maintained as reproducible research infrastructure.
+[快速开始](#快速开始) · [工作流](#研究工作流) · [文档](V2/docs/INDEX.md) · [贡献](CONTRIBUTING.md) · [引用与授权](#引用与授权)
 
 ---
 
-## 2. 快速入口 / Quick Links
+## 从文献到证据
 
-| 入口 | 用途 |
-|---|---|
-| `V2/README.md` | V2 主说明与运行入口 |
-| `V2/docs/INDEX.md` | V2 文档索引 |
-| `V2/docs/PIPELINE.md` | 可复现 pipeline |
-| `V2/docs/METHOD.md` | 方法原则 |
-| `V2/docs/DATA_LICENSE_AND_RELEASE_POLICY.md` | 数据与发布政策 |
-| `V2/cases/kunyu_diqiu_comparison/` | 当前核心研究案例 |
-| `CONTRIBUTING.md` | 仓库级贡献规范 |
-| `V2/CONTRIBUTING.md` | V2 贡献规范 |
+- **来源可追溯** — 登记文献元数据与原始文本，校验来源文件并记录 SHA-256。
+- **语境可检索** — 按固定字符长度生成文本片段，用词表提取 KWIC（关键词上下文）。
+- **结果可复核** — 生成证据与论断候选表，保留文献标识、片段标识、原文引句和复核状态。
+- **流程可重现** — 通过 Python CLI 运行处理链，生成质量报告与文件清单。
 
----
+## 研究工作流
 
-## 3. 当前状态 / Current Status
+1. **登记与校验**：读取原始文本清单、文献元数据与领域词表。
+2. **分段与检索**：规范化 WS 文本空白，按字符分段，提取关键词上下文。
+3. **整理候选证据**：生成证据表、研究配置对应的 KWIC 与论断候选。
+4. **人工复核与解释**：回查原始材料、校勘版本信息，再形成研究判断。
 
-| 维度 | 状态 |
-|---|---|
-| 当前活跃版本 | `V2/` |
-| 历史材料 | `DH/` |
-| 真实 raw source | 已登记 |
-| 可复现 pipeline | 已建立 |
-| case builder | 已建立 |
-| 测试 | 已建立 |
-| CI | 手动触发，待稳定后恢复自动触发 |
-| 学术解释 | candidate 阶段，需人工复核 |
+自动生成结果标记为 `candidate`。固定长度分段不是自然章节；规范化文本中的字符位置也不等同于原书页码。证据进入正式解释前仍需人工核对。详见[处理流程](V2/docs/PIPELINE.md)与[复核规则](V2/docs/REVIEW.md)。
 
-V2 已经不是一次性工作坊展示内容。它现在是一个可继续扩展的研究仓库雏形。它仍不是完成的学术论文。下一阶段重点是人工复核、校勘说明、版本页码信息和第一个可发布 digital essay。
+## 快速开始
 
----
-
-## 4. 当前真实材料 / Real Sources
-
-当前 V2 主线登记并使用仓库根目录中的两部 WS 文本：
-
-```text
-1674_坤輿圖說_WS.txt
-1799_地球圖説_WS.txt
-```
-
-这两部文件是当前 pipeline 的真实 raw source。`V2/data/processed/sample_segments.jsonl` 只用于 smoke test，不进入正式研究解释。
-
----
-
-## 5. 如何运行 / How to Run
-
-进入 `V2/` 后运行：
+准备 Python 3.10 或更新版本与 Git。在终端运行：
 
 ```bash
-make pipeline
+git clone https://github.com/Luka-Tsinghua/DH.git
+cd DH
+python V2/scripts/dh_v2.py pipeline
 ```
 
-完整检查：
+处理链使用 Python 标准库，不需要 API 密钥。它读取仓库已登记的原始文本，生成分段、KWIC、证据候选、研究配置对应的候选表和文件清单。
 
-```bash
-make all
-```
+主要输出位于：
 
-`make pipeline` 会执行 raw source validation、segment build、KWIC、candidate evidence、case-level candidate outputs 和 release manifest。`make all` 会在此基础上运行 smoke tests。
+- `V2/data/processed/`：生成的完整文本分段。
+- `V2/outputs/`：质量报告与特征表。
+- 各研究目录的 `generated/`：按配置生成的候选结果。
+- `V2/releases/manifest.json`：文件路径、大小与 SHA-256 清单。
 
----
+这些输出可由脚本重建，与人工整理的研究文件分开保存。原始文本保持不变。
 
-## 6. 仓库结构 / Repository Structure
+开发安装、单步命令及测试见 [V2 使用指南](V2/README.md)。
 
-```text
-.
-├── README.md                         # 仓库入口说明
-├── CONTRIBUTING.md                   # 仓库级贡献规范
-├── .github/workflows/v2-ci.yml       # V2 检查 workflow，当前为手动触发
-├── 1674_坤輿圖說_WS.txt              # V2 raw source
-├── 1799_地球圖説_WS.txt              # V2 raw source
-├── V2/                               # 当前活跃研究版本
-│   ├── README.md                     # V2 主说明
-│   ├── Makefile                      # pipeline 入口
-│   ├── pyproject.toml                # Python 项目配置
-│   ├── config/                       # 项目配置与词表
-│   ├── data/                         # raw manifest、metadata、processed data
-│   ├── schemas/                      # 数据结构 schema
-│   ├── scripts/                      # CLI 与 case builder
-│   ├── tests/                        # smoke tests
-│   ├── cases/                        # 研究案例
-│   ├── docs/                         # 方法、维护、政策、路线图
-│   ├── outputs/                      # 可再生成输出
-│   └── releases/                     # release manifest 与发布材料
-└── DH/                               # V1 工作坊历史材料
-```
+## 文档导航
 
-`DH/` 保存早期工作坊材料和方法探索记录。`V2/` 是当前活跃版本。不要把 `DH/` 当作当前主线来修改，除非任务明确要求处理 V1 历史材料。
+| 阅读入口 | 内容 |
+| :--- | :--- |
+| [V2 使用指南](V2/README.md) | 安装、命令、输出与测试 |
+| [文档索引](V2/docs/INDEX.md) | 按研究与维护任务查找文档 |
+| [处理流程](V2/docs/PIPELINE.md) | 原始文本到候选证据的处理规则 |
+| [数据模型](V2/docs/DATA_MODEL.md) | 文献、片段、证据与论断的字段关系 |
+| [方法原则](V2/docs/METHOD.md) · [复核规则](V2/docs/REVIEW.md) | 人文学术判断与机器候选的边界 |
+| [校勘规范](V2/docs/OCR_AND_COLLATION_PROTOCOL.md) | OCR、版本信息与文本核对 |
+| [贡献指南](CONTRIBUTING.md) | 开发与研究贡献的入口 |
+| [路线图](V2/docs/ROADMAP.md) | 后续研究与工程方向 |
 
----
+## 仓库地图
 
-## 7. 研究对象模型 / Research Objects
+- **[V2/](V2/)** — 当前活跃版本：CLI、配置、数据模型、测试与研究文档。
+- **仓库根目录** — 已登记的 WS 原始文本与早期工作坊文件；原始文本不由处理脚本覆盖。
+- **[V1 历史分支](https://github.com/Luka-Tsinghua/DH/tree/v1-original-archive-2026)** — 早期工作坊版本的保留记录。
 
-V2 的核心对象不是网页，而是可复核的研究对象：
+目前实现集中在本地文本处理和候选证据整理。外部权威库关联与学术界面设计见[文档索引](V2/docs/INDEX.md)，其中的规划不代表已经实现的功能。
 
-```text
-RawSource → Document → Segment → Term → KWIC → Evidence → Claim → Case → Release
-```
+## 引用与授权
 
-这一模型的基本原则是：解释不能脱离证据，证据不能脱离文本，文本不能脱离来源。
+引用时请注明所用版本或提交，并区分工具、数据模型与人工复核后的研究成果。作者与版本元数据见 [CITATION.cff](CITATION.cff)。
 
----
+仓库尚无明确的代码许可证。代码、原始文本、候选结果、人工整理成果及第三方数据的授权范围需分别处理，参见[分层数据与发布政策](V2/docs/DATA_LICENSE_AND_RELEASE_POLICY.md)。
 
-## 8. 当前核心案例 / Current Case
+## 项目缘起
 
-当前核心 case 位于：
-
-```text
-V2/cases/kunyu_diqiu_comparison/
-```
-
-该 case 比较《坤輿圖說》与《地球圖説》的术语、地理知识表达、图说体裁和制度化翻译语境。`case_config.json` 定义 focus terms、segment source 和输出路径。脚本生成的候选结果进入 `generated/`；人工复核后的结果进入 case 根目录下的 curated CSV 和 interpretive note。
-
----
-
-## 9. 给 LLM / Agent 的规则
-
-- 将 `V2/` 视为当前活跃版本。
-- 将 `DH/` 视为 V1 历史材料。
-- 不覆盖 raw source。
-- 不把 generated candidate outputs 写成最终学术结论。
-- 每条 claim 必须保留 `document_id`、`segment_id`、`evidence_quote` 和 `review_status`。
-- 新增 case 时必须保留 `case_config.json`、`generated/` 与 curated case files 的分层。
-- 修改 pipeline 后必须同步更新 README、Makefile、tests 和 docs。
-
----
-
-## 10. 授权与数据政策 / License and Data Policy
-
-本仓库采用分层授权原则。项目自有代码和文档、raw texts、generated candidate outputs、curated scholarly outputs、external authority data 不应混用同一种授权逻辑。
-
-详见：
-
-```text
-V2/docs/DATA_LICENSE_AND_RELEASE_POLICY.md
-```
-
----
-
-## 11. 致谢 / Acknowledgement
-
-本项目源于作者参与 2023 International Digital Humanities Summer Workshop 的早期小组作业。V1 材料作为项目历史起点和方法探索记录保留。仓库结构、部分文档草案和工作流设计曾由 Codex / ChatGPT 辅助生成。学术判断、材料解释、数据发布和最终研究结论仍由研究者负责。
+项目源于作者参与 2023 International Digital Humanities Summer Workshop 的早期小组工作，现以 V2 维护文本处理与证据组织流程。早期材料保留为方法探索记录；学术判断、材料解释与研究结论由研究者负责。

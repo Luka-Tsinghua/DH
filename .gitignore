@@ -1,0 +1,17 @@
+# Python environments, caches and local build products
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Reproducible outputs; source and curated research files stay tracked
+/V2/data/processed/full_segments.jsonl
+/V2/outputs/qc/
+/V2/outputs/features/
+/V2/releases/manifest.json
+/V2/cases/*/generated/*.csv
+/V2/cases/*/generated/*.json

@@ -11,19 +11,18 @@ This document defines the intended structure of the active V2 research version. 
 ├── .github/workflows/v2-ci.yml
 ├── 1674_坤輿圖說_WS.txt
 ├── 1799_地球圖説_WS.txt
-├── V2/
-└── DH/
+└── V2/
 ```
 
 ## Root-level roles
 
 - `README.md`: repository-level navigation hub.
 - `CONTRIBUTING.md`: repository-level contribution rules.
-- `.github/workflows/v2-ci.yml`: CI workflow, currently kept as manual dispatch while checks are stabilized.
+- `.github/workflows/v2-ci.yml`: CI workflow for matching main/codex branch pushes, pull requests to main, and manual dispatch.
 - `1674_坤輿圖說_WS.txt`: raw source used by V2.
 - `1799_地球圖説_WS.txt`: raw source used by V2.
 - `V2/`: active reproducible research version.
-- `DH/`: historical V1 workshop archive.
+- Root-level workshop scripts and images: early project materials. The V1 snapshot is retained on the `v1-original-archive-2026` branch.
 
 ## V2 structure
 
