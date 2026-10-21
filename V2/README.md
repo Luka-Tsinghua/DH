@@ -73,13 +73,11 @@ python V2/scripts/dh_v2.py release-manifest
 
 **可再生输出**
 
-| 位置（相对 V2） | 内容 |
-| :--- | :--- |
-| `data/processed/full_segments.jsonl` | 固定字符长度的规范化文本分段 |
-| `outputs/qc/` | 元数据、来源、分段的校验与构建报告 |
-| `outputs/features/` | 完整文本 KWIC 与证据候选 CSV |
-| 各研究目录的 `generated/` | 对应配置的 KWIC、证据、论断候选与构建报告 |
-| `releases/manifest.json` | 文件清单与 SHA-256；不包含清单自身和本地环境、缓存 |
+- **文本分段**：`data/processed/full_segments.jsonl`。
+- **质量报告**：`outputs/qc/`，记录元数据、来源、分段的校验与构建结果。
+- **特征表**：`outputs/features/`，保存完整文本 KWIC 与证据候选 CSV。
+- **研究配置输出**：各研究目录的 `generated/`，保存 KWIC、证据、论断候选与构建报告。
+- **文件清单**：`releases/manifest.json`，记录文件大小与 SHA-256；不包含清单自身和本地环境、缓存。
 
 生成结果不自动写入人工整理的 CSV 或解释文本。[数据说明](data/README.md)与[复核规则](docs/REVIEW.md)说明各层材料的用途。
 
